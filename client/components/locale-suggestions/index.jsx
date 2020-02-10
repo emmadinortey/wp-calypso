@@ -10,12 +10,11 @@ import startsWith from 'lodash/startsWith';
 /**
  * Internal dependencies
  */
-import { addLocaleToPath, getLanguage } from 'calypso/lib/i18n-utils';
+import { addLocaleToPath } from 'calypso/lib/i18n-utils';
 import LocaleSuggestionsListItem from './list-item';
 import QueryLocaleSuggestions from 'calypso/components/data/query-locale-suggestions';
 import Notice from 'calypso/components/notice';
 import getLocaleSuggestions from 'calypso/state/selectors/get-locale-suggestions';
-import { setLocale } from 'calypso/state/ui/language/actions';
 
 /**
  * Style dependencies
@@ -24,13 +23,11 @@ import './style.scss';
 
 export class LocaleSuggestions extends Component {
 	static propTypes = {
-		locale: PropTypes.string,
 		path: PropTypes.string.isRequired,
 		localeSuggestions: PropTypes.array,
 	};
 
 	static defaultProps = {
-		locale: '',
 		localeSuggestions: [],
 	};
 
@@ -38,31 +35,7 @@ export class LocaleSuggestions extends Component {
 		dismissed: false,
 	};
 
-	UNSAFE_componentWillMount() {
-		let { locale } = this.props;
-
-		if ( ! locale && typeof navigator === 'object' && 'languages' in navigator ) {
-			for ( const langSlug of navigator.languages ) {
-				const language = getLanguage( langSlug.toLowerCase() );
-				if ( language ) {
-					locale = language.langSlug;
-					break;
-				}
-			}
-		}
-
-		this.props.setLocale( locale );
-	}
-
-	UNSAFE_componentWillReceiveProps( nextProps ) {
-		if ( this.props.locale !== nextProps.locale ) {
-			this.props.setLocale( nextProps.locale );
-		}
-	}
-
 	dismiss = () => this.setState( { dismissed: true } );
-
-	getPathWithLocale = ( locale ) => addLocaleToPath( this.props.path, locale );
 
 	render() {
 		if ( this.state.dismissed ) {
@@ -86,17 +59,17 @@ export class LocaleSuggestions extends Component {
 		const localeMarkup = usersOtherLocales.map( ( locale ) => {
 			return (
 				<LocaleSuggestionsListItem
-					key={ 'locale-' + locale.locale }
+					key={ locale.locale }
 					locale={ locale }
 					onLocaleSuggestionClick={ this.dismiss }
-					path={ this.getPathWithLocale( locale.locale ) }
+					path={ addLocaleToPath( this.props.path, locale.locale ) }
 				/>
 			);
 		} );
 
 		return (
 			<div className="locale-suggestions">
-				<Notice icon="globe" showDismiss={ true } onDismissClick={ this.dismiss }>
+				<Notice icon="globe" showDismiss onDismissClick={ this.dismiss }>
 					<div className="locale-suggestions__list">{ localeMarkup }</div>
 				</Notice>
 			</div>
@@ -104,9 +77,6 @@ export class LocaleSuggestions extends Component {
 	}
 }
 
-export default connect(
-	( state ) => ( {
-		localeSuggestions: getLocaleSuggestions( state ),
-	} ),
-	{ setLocale }
-)( LocaleSuggestions );
+export default connect( state => ( {
+	localeSuggestions: getLocaleSuggestions( state ),
+} ) )( LocaleSuggestions );
