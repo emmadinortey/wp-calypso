@@ -638,7 +638,8 @@ __metadata:
     "@wordpress/element": ^2.20.3
     "@wordpress/i18n": ^3.20.0
     classnames: ^2.2.6
-    jest: ^27.0.6
+    debug: ^4.1.1
+    jest: ^26.4.0
     lodash: ^4.17.21
     react: ^16.12.0
     react-dom: ^16.12.0
@@ -729,6 +730,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@automattic/search@workspace:packages/search"
   dependencies:
+    "@babel/core": ^7.14.0
+    "@babel/preset-env": ^7.14.1
     "@babel/runtime": ^7.14.0
     "@storybook/addon-actions": ^6.1.10
     "@storybook/preset-scss": ^1.0.3
@@ -13512,6 +13515,8 @@ __metadata:
     "@automattic/webpack-extensive-lodash-replacement-plugin": ^0.0.2
     "@automattic/webpack-inline-constant-exports-plugin": ^1.0.0
     "@automattic/wpcom-checkout": ^1.0.0
+    "@babel/core": ^7.14.0
+    "@babel/preset-env": ^7.14.1
     "@babel/runtime": ^7.14.0
     "@emotion/core": ^10.0.27
     "@emotion/styled": ^10.0.27
@@ -13552,6 +13557,7 @@ __metadata:
     "@wordpress/url": ^2.22.2
     "@wordpress/viewport": ^2.26.3
     "@wordpress/warning": ^1.4.2
+    "@wp-g2/create-styles": ^0.0.164
     archiver: ^3.1.1
     autoprefixer: ^10.2.5
     autosize: ^4.0.2
@@ -13572,6 +13578,7 @@ __metadata:
     component-query: ^0.0.3
     cookie: ^0.4.0
     cookie-parser: ^1.4.5
+    core-js-bundle: ^3.6.4
     cpf_cnpj: ^0.2.0
     creditcards: ^3.1.0
     d3-array: ^2.4.0
@@ -13611,6 +13618,7 @@ __metadata:
     inherits: ^2.0.4
     is-my-json-valid: ^2.20.0
     isolated-block-editor: "https://github.com/Automattic/isolated-block-editor.git#alpha-0"
+    jest: ^26.4.0
     jest-emotion: ^10.0.27
     jest-fetch-mock: ^3.0.3
     jest-mock-process: ^1.4.0
@@ -13638,6 +13646,7 @@ __metadata:
     photon: ^4.0.0
     pkg-dir: ^5.0.0
     portscanner: ^2.2.0
+    postcss: ^8.2.6
     postcss-custom-properties: ^11.0.0
     prismjs: ^1.17.1
     prop-types: ^15.7.2
@@ -13651,6 +13660,7 @@ __metadata:
     react-lazily-render: ^1.2.0
     react-live: ^1.12.0
     react-modal: ^3.11.1
+    react-native: ^0.64.1
     react-query: ^3.9.8
     react-redux: ^7.2.4
     react-router-dom: ^5.1.2
@@ -13659,11 +13669,13 @@ __metadata:
     react-test-renderer: ^16.12.0
     react-transition-group: ^4.3.0
     reakit: ^1.2.3
+    reakit-utils: ^0.15.1
     redux: ^4.0.5
     redux-dynamic-middlewares: ^2.0.0
     redux-mock-store: ^1.5.4
     redux-thunk: ^2.3.0
     refx: ^3.1.1
+    regenerator-runtime: ^0.13.4
     resize-observer-polyfill: ^1.5.1
     rtlcss: ^3.1.2
     semver: ^7.3.2
@@ -15488,6 +15500,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"core-js-bundle@npm:^3.6.4":
+  version: 3.12.1
+  resolution: "core-js-bundle@npm:3.12.1"
+  checksum: ad869b92d64366826d6b12ac6fe2379911c32dec4e6092ecc9f922f18e96001042a27b13bbe1e15370b0a550da3cd2b45f622730619cade7252c7730de55adae
+  languageName: node
+  linkType: hard
+
 "core-js-compat@npm:^3.6.2, core-js-compat@npm:^3.9.0, core-js-compat@npm:^3.9.1":
   version: 3.10.1
   resolution: "core-js-compat@npm:3.10.1"
@@ -15943,7 +15962,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"css-loader@npm:^3.5.3":
+"css-loader@npm:^3.4.2, css-loader@npm:^3.5.3":
   version: 3.6.0
   resolution: "css-loader@npm:3.6.0"
   dependencies:
@@ -36712,6 +36731,31 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
+"sass-loader@npm:^8.0.0":
+  version: 8.0.2
+  resolution: "sass-loader@npm:8.0.2"
+  dependencies:
+    clone-deep: ^4.0.1
+    loader-utils: ^1.2.3
+    neo-async: ^2.6.1
+    schema-utils: ^2.6.1
+    semver: ^6.3.0
+  peerDependencies:
+    fibers: ">= 3.1.0"
+    node-sass: ^4.0.0
+    sass: ^1.3.0
+    webpack: ^4.36.0 || ^5.0.0
+  peerDependenciesMeta:
+    fibers:
+      optional: true
+    node-sass:
+      optional: true
+    sass:
+      optional: true
+  checksum: 05f862cae19a4fd36ff099e36bee1213dbe367ef19842f3c6b12e74646eed34162c4b01475ffbeadbf74d7e3cf8d56ea058de0c0610b7d1f3cd4e870d1ab4808
+  languageName: node
+  linkType: hard
+
 "sass@npm:^1.26.11":
   version: 1.32.8
   resolution: "sass@npm:1.32.8"
@@ -36800,7 +36844,7 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"schema-utils@npm:^2.0.0, schema-utils@npm:^2.5.0, schema-utils@npm:^2.6.5, schema-utils@npm:^2.6.6, schema-utils@npm:^2.7.0":
+"schema-utils@npm:^2.0.0, schema-utils@npm:^2.5.0, schema-utils@npm:^2.6.1, schema-utils@npm:^2.6.5, schema-utils@npm:^2.6.6, schema-utils@npm:^2.7.0":
   version: 2.7.1
   resolution: "schema-utils@npm:2.7.1"
   dependencies:
@@ -42035,6 +42079,7 @@ typescript@^4.3.2:
     "@automattic/wp-babel-makepot": ^1.0.0
     "@babel/core": ^7.14.0
     "@babel/eslint-parser": ^7.13.14
+    "@babel/preset-env": ^7.14.1
     "@babel/register": ^7.13.16
     "@babel/runtime": ^7.14.0
     "@signal-noise/stylelint-scales": ^2.0.0
@@ -42067,13 +42112,16 @@ typescript@^4.3.2:
     "@typescript-eslint/parser": ^4.22.0
     "@wordpress/base-styles": ^3.4.3
     "@wordpress/components": ^13.0.3
+    "@wordpress/data": ^4.27.3
     "@wordpress/element": ^2.20.3
     "@wordpress/eslint-plugin": ^9.0.4
     "@wordpress/i18n": ^3.20.0
     "@wordpress/icons": ^2.10.3
+    "@wordpress/is-shallow-equal": ^3.1.3
     "@wordpress/jest-preset-default": ^7.0.3
     "@wordpress/npm-package-json-lint-config": ^4.0.3
     "@wordpress/url": ^2.22.2
+    "@wp-g2/create-styles": ^0.0.164
     autoprefixer: ^10.2.5
     babel-jest: ^27.0.6
     babel-loader: ^8.2.2
@@ -42090,11 +42138,14 @@ typescript@^4.3.2:
     chai-enzyme: ^1.0.0-beta.1
     chalk: ^4.0.0
     check-node-version: ^4.0.2
+    cheerio: ^1.0.0-rc.3
     chokidar: ^3.5.1
     chokidar-cli: ^2.1.0
     chroma-js: ^2.1.0
     concurrently: ^5.1.0
     config: ^3.3.6
+    core-js-bundle: ^3.6.4
+    css-loader: ^3.4.2
     debug: ^4.1.1
     doctrine: ^3.0.0
     enhanced-resolve: ^5.8.2
@@ -42144,6 +42195,7 @@ typescript@^4.3.2:
     ncp: ^2.0.0
     nock: ^12.0.3
     npm-merge-driver: ^2.3.5
+    npm-package-json-lint: ^5.0.0
     npm-run-all: ^4.1.5
     photon: ^4.0.0
     postcss: ^8.2.15
@@ -42153,11 +42205,15 @@ typescript@^4.3.2:
     qs: ^6.9.1
     react: ^16.12.0
     react-dom: ^16.12.0
+    react-native: ^0.64.1
     readline-sync: ^1.4.10
+    reakit-utils: ^0.15.1
     recursive-copy: ^2.0.10
+    regenerator-runtime: ^0.13.4
     replace: ^1.1.5
     request: ^2.88.2
     sass: ^1.32.13
+    sass-loader: ^8.0.0
     sharp: ^0.25.3
     sinon: ^11.1.1
     sinon-chai: ^3.5.0
