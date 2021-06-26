@@ -13,7 +13,10 @@ import './setup';
 
 export function setupGoogleAnalyticsGtag( options ) {
 	setupGtag();
-	window.gtag( 'config', TRACKING_IDS.wpcomGoogleAnalyticsGtag, options );
+	( Array.isArray( TRACKING_IDS.wpcomGoogleAnalyticsGtag )
+		? TRACKING_IDS.wpcomGoogleAnalyticsGtag
+		: [ TRACKING_IDS.wpcomGoogleAnalyticsGtag ]
+	).forEach( ( tag ) => window.gtag( 'config', tag, options ) );
 }
 
 /**
@@ -67,11 +70,16 @@ export function getGoogleAnalyticsDefaultConfig() {
  * @param {string} pageTitle The title of the current page
  */
 export function fireGoogleAnalyticsPageView( urlPath, pageTitle ) {
-	window.gtag( 'config', TRACKING_IDS.wpcomGoogleAnalyticsGtag, {
-		...getGoogleAnalyticsDefaultConfig(),
-		page_path: urlPath,
-		page_title: pageTitle,
-	} );
+	( Array.isArray( TRACKING_IDS.wpcomGoogleAnalyticsGtag )
+		? TRACKING_IDS.wpcomGoogleAnalyticsGtag
+		: [ TRACKING_IDS.wpcomGoogleAnalyticsGtag ]
+	).forEach( ( tag ) =>
+		window.gtag( 'config', tag, {
+			...getGoogleAnalyticsDefaultConfig(),
+			page_path: urlPath,
+			page_title: pageTitle,
+		} )
+	);
 }
 
 /**
