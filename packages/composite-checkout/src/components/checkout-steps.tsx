@@ -36,8 +36,6 @@ import styled from '../lib/styled';
 import { Theme } from '../lib/theme';
 import { FormStatus, CheckoutStepProps } from '../types';
 
-import badge14Src from './assets/icons/badge-14.svg';
-
 const debug = debugFactory( 'composite-checkout:checkout' );
 
 interface StepCompleteStatus {
@@ -471,35 +469,20 @@ export const SubmitButtonWrapper = styled.div`
 	}
 `;
 
-const SubmitButtonFooter = styled.div< React.HTMLAttributes< HTMLDivElement > >`
-	display: flex;
-	justify-content: center;
-	align-items: center;
-
-	margin-top: 1.25rem;
-
-	color: ${ ( props ) => props.theme.colors.textColor };
-
-	font-weight: 500;
-
-	img {
-		margin-right: 0.5rem;
-	}
-`;
-
 export function CheckoutStepArea( {
 	children,
 	className,
 	submitButtonHeader,
+	submitButtonFooter,
 	disableSubmitButton,
 }: {
 	children: React.ReactNode;
 	className?: string;
 	submitButtonHeader?: React.ReactNode;
+	submitButtonFooter?: React.ReactNode;
 	disableSubmitButton?: boolean;
 } ): JSX.Element {
 	const onEvent = useEvents();
-	const { __ } = useI18n();
 
 	const { activeStepNumber, totalSteps } = useContext( CheckoutStepDataContext );
 	const actualActiveStepNumber =
@@ -521,15 +504,12 @@ export function CheckoutStepArea( {
 			{ children }
 
 			<SubmitButtonWrapper className="checkout-steps__submit-button-wrapper">
-				{ submitButtonHeader ? submitButtonHeader : null }
+				{ submitButtonHeader || null }
 				<CheckoutSubmitButton
 					disabled={ isThereAnotherNumberedStep || disableSubmitButton }
 					onLoadError={ onSubmitButtonLoadError }
 				/>
-				<SubmitButtonFooter>
-					<img src={ badge14Src } alt="" />
-					<span>{ __( '14 day money back guarantee' ) }</span>
-				</SubmitButtonFooter>
+				{ submitButtonFooter || null }
 			</SubmitButtonWrapper>
 		</CheckoutStepAreaWrapper>
 	);
