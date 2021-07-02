@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { defer, get, includes, isEmpty } from 'lodash';
 import { localize, getLocaleSlug } from 'i18n-calypso';
 import page from 'page';
+import { withShoppingCart } from '@automattic/shopping-cart';
 
 /**
  * Internal dependencies
@@ -59,6 +60,7 @@ import { getStepModuleName } from 'calypso/signup/config/step-components';
 import { getExternalBackUrl } from './utils';
 import ReskinSideExplainer from 'calypso/components/domains/reskin-side-explainer';
 import { isUserLoggedIn } from 'calypso/state/current-user/selectors';
+import { fillInSingleCartItemAttributes } from 'calypso/lib/cart-values';
 
 /**
  * Style dependencies
@@ -116,16 +118,16 @@ class DomainsStep extends React.Component {
 			const productSlug = getDomainProductSlug( domain );
 			const domainItem = domainRegistration( { productSlug, domain } );
 
-			props.submitSignupStep(
-				{
-					stepName: props.stepName,
-					domainItem,
-					siteUrl: domain,
-					isPurchasingItem: true,
-					stepSectionName: props.stepSectionName,
-				},
-				{ domainItem }
-			);
+			this.props.shoppingCartManager.addProductsToCart( [
+				fillInSingleCartItemAttributes( domainItem, this.props.productsList ),
+			] );
+
+			props.submitSignupStep( {
+				stepName: props.stepName,
+				siteUrl: domain,
+				isPurchasingItem: true,
+				stepSectionName: props.stepSectionName,
+			} );
 
 			props.goToNextStep();
 		}
@@ -314,12 +316,18 @@ class DomainsStep extends React.Component {
 
 		suggestion && this.props.submitDomainStepSelection( suggestion, this.getAnalyticsSection() );
 
+		const productsToAddToCart = [ domainItem, googleAppsCartItem ].filter( Boolean );
+
+		this.props.shoppingCartManager.addProductsToCart(
+			productsToAddToCart.map( ( product ) =>
+				fillInSingleCartItemAttributes( product, this.props.productsList )
+			)
+		);
+
 		this.props.submitSignupStep(
 			Object.assign(
 				{
 					stepName: this.props.stepName,
-					domainItem,
-					googleAppsCartItem,
 					isPurchasingItem,
 					siteUrl,
 					stepSectionName: this.props.stepSectionName,
@@ -327,7 +335,7 @@ class DomainsStep extends React.Component {
 				this.getThemeArgs()
 			),
 			Object.assign(
-				{ domainItem },
+				{},
 				this.isDependencyShouldHideFreePlanProvided() ? { shouldHideFreePlan } : {},
 				useThemeHeadstartItem
 			)
@@ -350,19 +358,22 @@ class DomainsStep extends React.Component {
 
 		this.props.recordAddDomainButtonClickInMapDomain( domain, this.getAnalyticsSection() );
 
+		this.props.shoppingCartManager.addProductsToCart( [
+			fillInSingleCartItemAttributes( domainItem, this.props.productsList ),
+		] );
+
 		this.props.submitSignupStep(
 			Object.assign(
 				{
 					stepName: this.props.stepName,
 					[ sectionName ]: state,
-					domainItem,
 					isPurchasingItem,
 					siteUrl: domain,
 					stepSectionName: this.props.stepSectionName,
 				},
 				this.getThemeArgs()
 			),
-			Object.assign( { domainItem }, useThemeHeadstartItem )
+			Object.assign( {}, useThemeHeadstartItem )
 		);
 
 		this.props.goToNextStep();
@@ -384,19 +395,22 @@ class DomainsStep extends React.Component {
 
 		this.props.recordAddDomainButtonClickInTransferDomain( domain, this.getAnalyticsSection() );
 
+		this.props.shoppingCartManager.addProductsToCart( [
+			fillInSingleCartItemAttributes( domainItem, this.props.productsList ),
+		] );
+
 		this.props.submitSignupStep(
 			Object.assign(
 				{
 					stepName: this.props.stepName,
 					transfer: {},
-					domainItem,
 					isPurchasingItem,
 					siteUrl: domain,
 					stepSectionName: this.props.stepSectionName,
 				},
 				this.getThemeArgs()
 			),
-			Object.assign( { domainItem }, useThemeHeadstartItem )
+			Object.assign( {}, useThemeHeadstartItem )
 		);
 
 		this.props.goToNextStep();
@@ -874,4 +888,4 @@ export default connect(
 		hideSitePreview,
 		showSitePreview,
 	}
-)( localize( DomainsStep ) );
+)( withShoppingCart( localize( DomainsStep ) ) );
