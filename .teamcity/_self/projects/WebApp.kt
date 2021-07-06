@@ -839,6 +839,7 @@ object RunCalypsoPlaywrightE2eDesktopTests : BuildType({
 				# Run the test
 				export VIEWPORT_SIZE=desktop
 				export LOCALE=en
+				export HEADLESS=true
 				export NODE_CONFIG="{\"calypsoBaseURL\":\"${'$'}{URL%/}\"}"
 				export DEBUG=pw:api
 
