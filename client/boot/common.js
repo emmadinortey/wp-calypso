@@ -433,10 +433,10 @@ const boot = ( currentUser, registerRoutes ) => {
 	saveOauthFlags();
 	utils();
 	loadAllState().then( () => {
-		const initialState = getInitialState( initialReducer );
+		const initialState = getInitialState( initialReducer, currentUser.get()?.ID );
 		const reduxStore = createReduxStore( initialState, initialReducer );
 		setStore( reduxStore );
-		onDisablePersistence( persistOnChange( reduxStore ) );
+		onDisablePersistence( persistOnChange( reduxStore, currentUser.get()?.ID ) );
 		setupLocale( currentUser.get(), reduxStore );
 		configureReduxStore( currentUser, reduxStore );
 		setupMiddlewares( currentUser, reduxStore );

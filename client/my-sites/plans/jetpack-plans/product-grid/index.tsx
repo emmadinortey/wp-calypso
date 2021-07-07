@@ -1,6 +1,7 @@
 /**
  * External dependencies
  */
+import { isEnabled } from '@automattic/calypso-config';
 import classNames from 'classnames';
 import { useTranslate } from 'i18n-calypso';
 import React, { useMemo, useRef, useState, useEffect } from 'react';
@@ -16,13 +17,13 @@ import ProductCard from '../product-card';
 import { getProductPosition } from '../product-grid/products-order';
 import { getPlansToDisplay, getProductsToDisplay, isConnectionFlow } from './utils';
 import useGetPlansGridProducts from '../use-get-plans-grid-products';
-import JetpackFreeCard from 'calypso/components/jetpack/card/jetpack-free-card';
+import JetpackFreeCard from '../jetpack-free-card';
 import isJetpackCloud from 'calypso/lib/jetpack/is-jetpack-cloud';
 import {
 	PLAN_JETPACK_SECURITY_DAILY,
 	PLAN_JETPACK_SECURITY_DAILY_MONTHLY,
 } from '@automattic/calypso-products';
-import { getCurrentUserCurrencyCode } from 'calypso/state/current-user/selectors';
+import { getCurrentUserCurrencyCode } from 'calypso/state/currency-code/selectors';
 import getSitePlan from 'calypso/state/sites/selectors/get-site-plan';
 import getSelectedSiteId from 'calypso/state/ui/selectors/get-selected-site-id';
 import MoreInfoBox from '../more-info-box';
@@ -170,8 +171,11 @@ const ProductGrid: React.FC< ProductsGridProps > = ( {
 		[ onDurationChange, duration ]
 	);
 
+	const onlyRealtimeProducts = isEnabled( 'jetpack/only-realtime-products' );
+
 	return (
 		<>
+			{ onlyRealtimeProducts && <h1>jetpack/only-realtime-products is enabled</h1> }
 			{ planRecommendation && (
 				<PlanUpgradeSection
 					planRecommendation={ planRecommendation }
@@ -247,7 +251,9 @@ const ProductGrid: React.FC< ProductsGridProps > = ( {
 					) ) }
 				</ul>
 				<div className="product-grid__free">
-					{ showFreeCard && <JetpackFreeCard siteId={ siteId } urlQueryArgs={ urlQueryArgs } /> }
+					{ showFreeCard && (
+						<JetpackFreeCard fullWidth={ true } siteId={ siteId } urlQueryArgs={ urlQueryArgs } />
+					) }
 				</div>
 			</ProductGridSection>
 			<StoreFooter />
