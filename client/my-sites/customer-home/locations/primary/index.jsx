@@ -46,6 +46,7 @@ import {
 	TASK_WEBINARS,
 	TASK_WP_COURSES,
 } from 'calypso/my-sites/customer-home/cards/constants';
+import DotPager from 'calypso/components/dot-pager';
 import { withPerformanceTrackerStop } from 'calypso/lib/performance-tracking';
 import { bumpStat, composeAnalytics, recordTracksEvent } from 'calypso/state/analytics/actions';
 import { connect } from 'react-redux';
@@ -85,7 +86,7 @@ const Primary = ( { cards, trackCards } ) => {
 	}
 
 	return (
-		<>
+		<DotPager>
 			{ cards.map(
 				( card, index ) =>
 					cardComponents[ card ] &&
@@ -95,7 +96,7 @@ const Primary = ( { cards, trackCards } ) => {
 						card,
 					} )
 			) }
-		</>
+		</DotPager>
 	);
 };
 
