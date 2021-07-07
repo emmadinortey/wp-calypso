@@ -14,8 +14,12 @@ module.exports = {
 		}
 
 		const yarnPath = process.env.npm_config_yarn_path || 'yarn';
-		const { stdout } = await exec( `${ yarnPath } run -s env` );
-		const env = JSON.parse( stdout );
+		const { stdout } = await exec( `${ yarnPath } exec env` );
+		const env = stdout.split( '\n' ).reduce( ( environment, line ) => {
+			const [ key, ...vals ] = line.split( '=' );
+			environment[ key ] = vals.join( '=' );
+			return environment;
+		}, {} );
 
 		if ( ! env.npm_config_cache ) {
 			fail( 'npm_config_cache is not set' );
