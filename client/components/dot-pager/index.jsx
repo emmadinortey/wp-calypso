@@ -63,10 +63,10 @@ const Controls = ( { currentPage, numberOfPages, setCurrentPage } ) => {
 	);
 };
 
-export const DotPager = ( { children } ) => {
+export const DotPager = ( { children, ...props } ) => {
 	const [ currentPage, setCurrentPage ] = useState( 0 );
 	return (
-		<Card>
+		<Card { ...props }>
 			<div className="dot-pager__pages">
 				{ Children.map( children, ( child, index ) => (
 					<div
