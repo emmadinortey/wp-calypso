@@ -17,7 +17,14 @@ import Gridicon from 'calypso/components/gridicon';
  */
 import './style.scss';
 
-const Controls = ( { currentPage, numberOfPages, setCurrentPage } ) => {
+const Controls = ( {
+	currentPage,
+	numberOfPages,
+	setCurrentPage,
+	iconPrevious,
+	iconNext,
+	buttonText,
+} ) => {
 	const translate = useTranslate();
 	if ( numberOfPages < 2 ) {
 		return null;
@@ -33,7 +40,8 @@ const Controls = ( { currentPage, numberOfPages, setCurrentPage } ) => {
 					aria-label={ translate( 'Previous' ) }
 					onClick={ () => setCurrentPage( currentPage - 1 ) }
 				>
-					<Gridicon icon="chevron-left" size={ 18 } />
+					{ iconPrevious && <Gridicon icon={ iconPrevious } size={ 18 } /> }
+					{ buttonText && translate( 'Previous' ) }
 				</button>
 			</li>
 			{ times( numberOfPages, ( page ) => (
@@ -56,14 +64,21 @@ const Controls = ( { currentPage, numberOfPages, setCurrentPage } ) => {
 					aria-label={ translate( 'Next' ) }
 					onClick={ () => setCurrentPage( currentPage + 1 ) }
 				>
-					<Gridicon icon="chevron-right" size={ 18 } />
+					{ buttonText && translate( 'Next' ) }
+					{ iconNext && <Gridicon icon={ iconNext } size={ 18 } /> }
 				</button>
 			</li>
 		</ul>
 	);
 };
 
-export const DotPager = ( { children, ...props } ) => {
+export const DotPager = ( {
+	children,
+	iconPrevious = 'chevron-left',
+	iconNext = 'chevron-right',
+	buttonText = false,
+	...props
+} ) => {
 	const [ currentPage, setCurrentPage ] = useState( 0 );
 	return (
 		<Card { ...props }>
@@ -85,6 +100,7 @@ export const DotPager = ( { children, ...props } ) => {
 				currentPage={ currentPage }
 				numberOfPages={ Children.count( children ) }
 				setCurrentPage={ setCurrentPage }
+				{ ...{ iconPrevious, iconNext, buttonText } }
 			/>
 		</Card>
 	);
