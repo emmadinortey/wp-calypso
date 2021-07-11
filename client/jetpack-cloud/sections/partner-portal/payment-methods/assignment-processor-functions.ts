@@ -57,17 +57,15 @@ export async function assignNewCardProcessor(
 
 	try {
 		if ( ! isNewCardDataValid( submitData ) ) {
-			throw new Error( 'Credit Card data is missing name, country, or postal code' );
+			throw new Error( 'Credit Card data is missing your full name.' );
 		}
 		if ( ! stripe || ! stripeConfiguration ) {
 			throw new Error( 'Cannot assign payment method if Stripe is not loaded' );
 		}
 
-		const { name, countryCode, postalCode } = submitData;
+		const { name } = submitData;
 
 		const formFieldValues = {
-			country: countryCode,
-			postal_code: postalCode,
 			name,
 		};
 		const tokenResponse = await createStripeSetupIntentAsync(
@@ -105,29 +103,21 @@ export async function assignNewCardProcessor(
 async function createStripeSetupIntentAsync(
 	{
 		name,
-		country,
-		postal_code,
 	}: {
 		name: string;
-		country: string;
-		postal_code: string | number;
 	},
 	stripe: Stripe,
 	stripeConfiguration: StripeConfiguration
 ): Promise< StripeSetupIntent > {
 	const paymentDetailsForStripe = {
 		name,
-		address: {
-			country,
-			postal_code,
-		},
 	};
 	return createStripeSetupIntent( stripe, stripeConfiguration, paymentDetailsForStripe );
 }
 
 function isNewCardDataValid( data: unknown ): data is NewCardSubmitData {
 	const newCardData = data as NewCardSubmitData;
-	return !! ( newCardData.name && newCardData.countryCode && newCardData.postalCode );
+	return !! newCardData.name;
 }
 
 interface NewCardSubmitData {

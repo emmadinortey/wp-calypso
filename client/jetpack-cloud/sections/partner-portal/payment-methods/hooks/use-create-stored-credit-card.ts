@@ -14,16 +14,12 @@ export function useCreateStoredCreditCard( {
 	stripeLoadingError,
 	stripeConfiguration,
 	stripe,
-	shouldUseEbanx,
-	shouldShowTaxFields = false,
 	activePayButtonText = undefined,
 }: {
 	isStripeLoading: boolean;
 	stripeLoadingError: StripeLoadingError;
 	stripeConfiguration: StripeConfiguration | null;
 	stripe: Stripe | null;
-	shouldUseEbanx: boolean;
-	shouldShowTaxFields?: boolean;
 	activePayButtonText?: string | undefined;
 } ): PaymentMethod | null {
 	const shouldLoadStripeMethod = ! isStripeLoading && ! stripeLoadingError;
@@ -35,8 +31,6 @@ export function useCreateStoredCreditCard( {
 						store: stripePaymentMethodStore,
 						stripe,
 						stripeConfiguration,
-						shouldUseEbanx,
-						shouldShowTaxFields,
 						activePayButtonText,
 				  } )
 				: null,
@@ -45,8 +39,6 @@ export function useCreateStoredCreditCard( {
 			stripePaymentMethodStore,
 			stripe,
 			stripeConfiguration,
-			shouldUseEbanx,
-			shouldShowTaxFields,
 			activePayButtonText,
 		]
 	);

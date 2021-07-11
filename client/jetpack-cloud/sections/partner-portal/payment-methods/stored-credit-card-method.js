@@ -164,27 +164,19 @@ export function createStoredCreditCardMethod( {
 	store,
 	stripe,
 	stripeConfiguration,
-	shouldUseEbanx,
-	shouldShowTaxFields = false,
 	activePayButtonText = undefined,
 } ) {
 	return {
 		id: 'card',
 		label: <CreditCardLabel />,
 		activeContent: (
-			<CreditCardFields
-				stripe={ stripe }
-				stripeConfiguration={ stripeConfiguration }
-				shouldUseEbanx={ shouldUseEbanx }
-				shouldShowTaxFields={ shouldShowTaxFields }
-			/>
+			<CreditCardFields stripe={ stripe } stripeConfiguration={ stripeConfiguration } />
 		),
 		submitButton: (
 			<CreditCardPayButton
 				store={ store }
 				stripe={ stripe }
 				stripeConfiguration={ stripeConfiguration }
-				shouldUseEbanx={ shouldUseEbanx }
 				activeButtonText={ activePayButtonText }
 			/>
 		),
@@ -220,6 +212,7 @@ function CreditCardLabel() {
 
 function CreditCardLogos() {
 	return (
+		// eslint-disable-next-line wpcalypso/jsx-classname-namespace
 		<PaymentMethodLogos className="credit-card__logo payment-logos">
 			<VisaLogo />
 			<MastercardLogo />
