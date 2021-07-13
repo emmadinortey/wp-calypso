@@ -255,9 +255,6 @@ class Layout extends Component {
 
 		const optionalBodyProps = () => {
 			const bodyClass = [];
-			if ( this.props.isNewLaunchFlow || this.props.isCheckoutFromGutenboarding ) {
-				bodyClass.push( 'is-new-launch-flow' );
-			}
 			if ( this.props.isNavUnificationEnabled && ! config.isEnabled( 'jetpack-cloud' ) ) {
 				// Jetpack cloud hasn't yet aligned with WPCOM.
 				bodyClass.push( 'is-nav-unification' );
@@ -396,8 +393,6 @@ export default compose(
 		const isJetpack =
 			( isJetpackSite( state, siteId ) && ! isAtomicSite( state, siteId ) ) ||
 			startsWith( currentRoute, '/checkout/jetpack' );
-		const isCheckoutFromGutenboarding =
-			'checkout' === sectionName && '1' === currentQuery?.preLaunch;
 		const noMasterbarForRoute = isJetpackLogin || currentRoute === '/me/account/closed';
 		const noMasterbarForSection = [ 'signup', 'jetpack-connect' ].includes( sectionName );
 		const isJetpackMobileFlow = 'jetpack-connect' === sectionName && !! retrieveMobileRedirect();
@@ -417,7 +412,6 @@ export default compose(
 			'plugins',
 			'comments',
 		].includes( sectionName );
-		const isNewLaunchFlow = startsWith( currentRoute, '/start/new-launch' );
 
 		return {
 			masterbarIsHidden:
@@ -451,8 +445,6 @@ export default compose(
 			// authorization, it would remove the newly connected site that has been fetched separately.
 			// See https://github.com/Automattic/wp-calypso/pull/31277 for more details.
 			shouldQueryAllSites: currentRoute && currentRoute !== '/jetpack/connect/authorize',
-			isNewLaunchFlow,
-			isCheckoutFromGutenboarding,
 			isNavUnificationEnabled: isNavUnificationEnabled( state ),
 			sidebarIsCollapsed: getSidebarIsCollapsed( state ),
 			shouldRequestReaderTeams: !! getCurrentUser( state ),
