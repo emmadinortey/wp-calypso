@@ -40,7 +40,7 @@ const Controls = ( {
 					aria-label={ translate( 'Previous' ) }
 					onClick={ () => setCurrentPage( currentPage - 1 ) }
 				>
-					{ iconPrevious && <Gridicon icon={ iconPrevious } size={ 18 } /> }
+					{ iconPrevious || <Gridicon icon="chevron-left" size={ 18 } /> }
 					{ buttonText && translate( 'Previous' ) }
 				</button>
 			</li>
@@ -65,7 +65,7 @@ const Controls = ( {
 					onClick={ () => setCurrentPage( currentPage + 1 ) }
 				>
 					{ buttonText && translate( 'Next' ) }
-					{ iconNext && <Gridicon icon={ iconNext } size={ 18 } /> }
+					{ iconNext || <Gridicon icon="chevron-right" size={ 18 } /> }
 				</button>
 			</li>
 		</ul>
@@ -74,9 +74,9 @@ const Controls = ( {
 
 export const DotPager = ( {
 	children,
-	iconPrevious = 'chevron-left',
-	iconNext = 'chevron-right',
 	buttonText = false,
+	iconNext = null,
+	iconPrevious = null,
 	...props
 } ) => {
 	const [ currentPage, setCurrentPage ] = useState( 0 );

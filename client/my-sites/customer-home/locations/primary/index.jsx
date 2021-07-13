@@ -74,6 +74,10 @@ const cardComponents = {
 	[ TASK_VERIFY_EMAIL ]: VerifyEmail,
 };
 
+const iconPrevious = <span className={ `gridicon dashicons-before dashicons-arrow-left-alt` } />;
+
+const iconNext = <span className={ `gridicon dashicons-before dashicons-arrow-right-alt` } />;
+
 const Primary = ( { cards, trackCards } ) => {
 	useEffect( () => {
 		if ( cards && cards.length ) {
@@ -90,8 +94,7 @@ const Primary = ( { cards, trackCards } ) => {
 			// eslint-disable-next-line wpcalypso/jsx-classname-namespace
 			className="customer-home__location-primary"
 			buttonText="true"
-			iconPrevious="arrow-left"
-			iconNext="arrow-right"
+			{ ...{ iconPrevious, iconNext } }
 		>
 			{ cards.map(
 				( card, index ) =>
