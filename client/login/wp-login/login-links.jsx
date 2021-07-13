@@ -15,12 +15,8 @@ import config from '@automattic/calypso-config';
 import ExternalLink from 'calypso/components/external-link';
 import Gridicon from 'calypso/components/gridicon';
 import LoggedOutFormBackLink from 'calypso/components/logged-out-form/back-link';
-import { getSignupUrl, getLoginLinkPageUrl } from 'calypso/lib/login';
-import {
-	isCrowdsignalOAuth2Client,
-	isJetpackCloudOAuth2Client,
-	isWooOAuth2Client,
-} from 'calypso/lib/oauth2-clients';
+import { getSignupUrl, getLoginLinkPageUrl, canDoMagicLogin } from 'calypso/lib/login';
+import { isCrowdsignalOAuth2Client, isJetpackCloudOAuth2Client } from 'calypso/lib/oauth2-clients';
 import { getUrlParts } from '@automattic/calypso-url';
 import { addQueryArgs } from 'calypso/lib/url';
 import { getCurrentOAuth2Client } from 'calypso/state/oauth2-clients/ui/selectors';
@@ -187,24 +183,18 @@ export class LoginLinks extends React.Component {
 	}
 
 	renderMagicLoginLink() {
-		if ( ! config.isEnabled( 'login/magic-login' ) || this.props.twoFactorAuthType ) {
+		if (
+			! canDoMagicLogin(
+				this.props.twoFactorAuthType,
+				this.props.oauth2Client,
+				this.props.wccomFrom,
+				this.props.isJetpackWooCommerceFlow
+			)
+		) {
 			return null;
 		}
 
 		if ( this.props.isLoggedIn ) {
-			return null;
-		}
-
-		// jetpack cloud cannot have users being sent to WordPress.com
-		if ( isJetpackCloudOAuth2Client( this.props.oauth2Client ) ) {
-			return null;
-		}
-
-		// @todo Implement a muriel version of the email login links for the WooCommerce onboarding flows
-		if ( isWooOAuth2Client( this.props.oauth2Client ) && this.props.wccomFrom ) {
-			return null;
-		}
-		if ( this.props.isJetpackWooCommerceFlow ) {
 			return null;
 		}
 
@@ -221,7 +211,7 @@ export class LoginLinks extends React.Component {
 				key="magic-login-link"
 				data-e2e-link="magic-login-link"
 			>
-				{ this.props.translate( 'Email me a login link' ) }
+				{ this.props.translate( 'Email me a login link, Stefan' ) }
 			</a>
 		);
 	}
