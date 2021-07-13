@@ -3,13 +3,8 @@
  */
 import { createStripeSetupIntent } from '@automattic/calypso-stripe';
 import type { Stripe, StripeConfiguration, StripeSetupIntent } from '@automattic/calypso-stripe';
-import {
-	makeRedirectResponse,
-	makeSuccessResponse,
-	makeErrorResponse,
-} from '@automattic/composite-checkout';
+import { makeSuccessResponse, makeErrorResponse } from '@automattic/composite-checkout';
 import type { PaymentProcessorResponse } from '@automattic/composite-checkout';
-import { addQueryArgs } from '@wordpress/url';
 import { useTranslate } from 'i18n-calypso';
 import { useDispatch } from 'react-redux';
 
@@ -29,23 +24,18 @@ const wpcomAssignPaymentMethod = (
 	subscriptionId: string,
 	stored_details_id: string
 ): Promise< unknown > => wpcom.assignPaymentMethod( subscriptionId, stored_details_id );
-const wpcomCreatePayPalAgreement = (
-	subscriptionId: string,
-	successUrl: string,
-	cancelUrl: string
-): Promise< string > => wpcom.createPayPalAgreement( subscriptionId, successUrl, cancelUrl );
 
 export async function assignNewCardProcessor(
 	{
 		purchase,
-		useForAllSubscriptions,
+		useAsPrimaryPaymentMethod,
 		translate,
 		stripe,
 		stripeConfiguration,
 		reduxDispatch,
 	}: {
 		purchase: Purchase | undefined;
-		useForAllSubscriptions?: boolean;
+		useAsPrimaryPaymentMethod?: boolean;
 		translate: ReturnType< typeof useTranslate >;
 		stripe: Stripe | null;
 		stripeConfiguration: StripeConfiguration | null;
@@ -91,7 +81,7 @@ export async function assignNewCardProcessor(
 		const result = await saveCreditCard( {
 			token,
 			stripeConfiguration,
-			useForAllSubscriptions: Boolean( useForAllSubscriptions ),
+			useAsPrimaryPaymentMethod: Boolean( useAsPrimaryPaymentMethod ),
 		} );
 
 		return makeSuccessResponse( result );
@@ -122,8 +112,6 @@ function isNewCardDataValid( data: unknown ): data is NewCardSubmitData {
 
 interface NewCardSubmitData {
 	name: string;
-	countryCode: string;
-	postalCode: string;
 }
 
 export async function assignExistingCardProcessor(
@@ -137,10 +125,8 @@ export async function assignExistingCardProcessor(
 			throw new Error( 'Credit card data is missing stored details id' );
 		}
 		const { storedDetailsId } = submitData;
-		if ( ! purchase ) {
-			throw new Error( 'Cannot assign PayPal payment method without a purchase' );
-		}
-		return wpcomAssignPaymentMethod( String( purchase.id ), storedDetailsId ).then( ( data ) => {
+
+		return wpcomAssignPaymentMethod( String( purchase?.id ), storedDetailsId ).then( ( data ) => {
 			return makeSuccessResponse( data );
 		} );
 	} catch ( error ) {
@@ -155,25 +141,6 @@ function isValidExistingCardData( data: unknown ): data is ExistingCardSubmitDat
 
 interface ExistingCardSubmitData {
 	storedDetailsId: string;
-}
-
-export async function assignPayPalProcessor(
-	purchase: Purchase | undefined,
-	reduxDispatch: ReturnType< typeof useDispatch >
-): Promise< PaymentProcessorResponse > {
-	if ( ! purchase ) {
-		throw new Error( 'Cannot assign PayPal payment method without a purchase' );
-	}
-	recordFormSubmitEvent( { reduxDispatch, purchase } );
-	return wpcomCreatePayPalAgreement(
-		String( purchase.id ),
-		addQueryArgs( window.location.href, { success: 'true' } ),
-		window.location.href
-	)
-		.then( ( data ) => {
-			return makeRedirectResponse( data );
-		} )
-		.catch( ( error ) => makeErrorResponse( error.message ) );
 }
 
 function recordFormSubmitEvent( {

@@ -17,16 +17,16 @@ type StoredCardEndpointResponse = unknown;
 export async function saveCreditCard( {
 	token,
 	stripeConfiguration,
-	useForAllSubscriptions,
+	useAsPrimaryPaymentMethod,
 }: {
 	token: string;
 	stripeConfiguration: StripeConfiguration;
-	useForAllSubscriptions: boolean;
+	useAsPrimaryPaymentMethod: boolean;
 } ): Promise< StoredCardEndpointResponse > {
 	const additionalData = getParamsForApi( {
 		cardToken: token,
 		stripeConfiguration,
-		useForAllSubscriptions,
+		useAsPrimaryPaymentMethod,
 	} );
 	const response = await wpcom.me().storedCardAdd( token, additionalData );
 	if ( response.error ) {
@@ -64,18 +64,18 @@ function getParamsForApi( {
 	cardToken,
 	stripeConfiguration,
 	purchase,
-	useForAllSubscriptions,
+	useAsPrimaryPaymentMethod,
 }: {
 	cardToken: string;
 	stripeConfiguration: StripeConfiguration;
 	purchase?: Purchase | undefined;
-	useForAllSubscriptions?: boolean;
+	useAsPrimaryPaymentMethod?: boolean;
 } ) {
 	return {
 		payment_partner: stripeConfiguration ? stripeConfiguration.processor_id : '',
 		paygate_token: cardToken,
-		...( useForAllSubscriptions === true ? { use_for_existing: true } : {} ),
-		...( useForAllSubscriptions === false ? { use_for_existing: false } : {} ), // if undefined, we do not add this property
+		...( useAsPrimaryPaymentMethod === true ? { use_for_existing: true } : {} ),
+		...( useAsPrimaryPaymentMethod === false ? { use_for_existing: false } : {} ), // if undefined, we do not add this property
 		...( purchase ? { purchaseId: purchase.id } : {} ),
 	};
 }
