@@ -11,19 +11,12 @@ import { useDispatch } from 'react-redux';
 /**
  * Internal Dependencies
  */
-import wp from 'calypso/lib/wp';
 import {
 	updateCreditCard,
 	saveCreditCard,
 } from 'calypso/jetpack-cloud/sections/partner-portal/payment-methods/stored-payment-method-api';
 import type { Purchase } from 'calypso/lib/purchases/types';
 import { recordTracksEvent } from 'calypso/state/analytics/actions';
-
-const wpcom = wp.undocumented();
-const wpcomAssignPaymentMethod = (
-	subscriptionId: string,
-	stored_details_id: string
-): Promise< unknown > => wpcom.assignPaymentMethod( subscriptionId, stored_details_id );
 
 export async function assignNewCardProcessor(
 	{
@@ -112,35 +105,6 @@ function isNewCardDataValid( data: unknown ): data is NewCardSubmitData {
 
 interface NewCardSubmitData {
 	name: string;
-}
-
-export async function assignExistingCardProcessor(
-	purchase: Purchase | undefined,
-	reduxDispatch: ReturnType< typeof useDispatch >,
-	submitData: unknown
-): Promise< PaymentProcessorResponse > {
-	recordFormSubmitEvent( { reduxDispatch, purchase } );
-	try {
-		if ( ! isValidExistingCardData( submitData ) ) {
-			throw new Error( 'Credit card data is missing stored details id' );
-		}
-		const { storedDetailsId } = submitData;
-
-		return wpcomAssignPaymentMethod( String( purchase?.id ), storedDetailsId ).then( ( data ) => {
-			return makeSuccessResponse( data );
-		} );
-	} catch ( error ) {
-		return makeErrorResponse( error.message );
-	}
-}
-
-function isValidExistingCardData( data: unknown ): data is ExistingCardSubmitData {
-	const existingCardData = data as ExistingCardSubmitData;
-	return !! existingCardData.storedDetailsId;
-}
-
-interface ExistingCardSubmitData {
-	storedDetailsId: string;
 }
 
 function recordFormSubmitEvent( {
