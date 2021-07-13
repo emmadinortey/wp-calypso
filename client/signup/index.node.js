@@ -1,7 +1,8 @@
 /**
  * Internal dependencies
  */
-import { getLanguage, getLanguageRouteParam } from 'calypso/lib/i18n-utils';
+import { setLocaleMiddleware } from 'calypso/controller';
+import { getLanguageRouteParam } from 'calypso/lib/i18n-utils';
 
 export default function ( router ) {
 	const lang = getLanguageRouteParam();
@@ -13,19 +14,6 @@ export default function ( router ) {
 			`/start/:flowName/:stepName/${ lang }`,
 			`/start/:flowName/:stepName/:stepSectionName/${ lang }`,
 		],
-		setUpLocale
+		setLocaleMiddleware()
 	);
-}
-
-// Set up the locale if there is one
-function setUpLocale( context, next ) {
-	const language = getLanguage( context.params.lang );
-	if ( language ) {
-		context.lang = context.params.lang;
-		if ( language.rtl ) {
-			context.isRTL = true;
-		}
-	}
-
-	next();
 }

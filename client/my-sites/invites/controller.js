@@ -64,7 +64,6 @@ export function acceptInvite( context, next ) {
 		inviteKey: context.params.invitation_key,
 		activationKey: context.params.activation_key,
 		authKey: context.params.auth_key,
-		locale: context.params.locale,
 		path: context.path,
 	} );
 	next();

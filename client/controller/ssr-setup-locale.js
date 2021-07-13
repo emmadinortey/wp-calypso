@@ -39,7 +39,6 @@ export function ssrSetupLocaleMiddleware() {
 		}
 
 		context.lang = language.langSlug;
-		context.isRTL = language.rtl ? true : false;
 
 		const cachedTranslations = translationsCache[ context.lang ];
 		if ( typeof cachedTranslations !== 'undefined' ) {

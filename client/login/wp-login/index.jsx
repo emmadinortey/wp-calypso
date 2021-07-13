@@ -114,16 +114,6 @@ export class Login extends React.Component {
 		this.setState( { usernameOrEmail } );
 	}
 
-	renderI18nSuggestions() {
-		const { locale, path, isLoginView } = this.props;
-
-		if ( ! isLoginView ) {
-			return null;
-		}
-
-		return <LocaleSuggestions locale={ locale } path={ path } />;
-	}
-
 	renderFooter() {
 		const { isJetpack, isGutenboarding, translate } = this.props;
 		const isOauthLogin = !! this.props.oauth2Client;
@@ -265,19 +255,17 @@ export class Login extends React.Component {
 	}
 
 	render() {
-		const { locale, translate } = this.props;
+		const { locale, translate, isLoginView, path } = this.props;
 		const canonicalUrl = localizeUrl( 'https://wordpress.com/log-in', locale );
 		return (
 			<div>
 				<Main className="wp-login__main">
-					{ this.renderI18nSuggestions() }
-
 					<DocumentHead
 						title={ translate( 'Log In' ) }
 						link={ [ { rel: 'canonical', href: canonicalUrl } ] }
 						meta={ [ { name: 'description', content: 'Log in to WordPress.com' } ] }
 					/>
-
+					{ isLoginView && <LocaleSuggestions path={ path } /> }
 					<div className="wp-login__container">{ this.renderContent() }</div>
 				</Main>
 

@@ -79,17 +79,7 @@ class MagicLogin extends React.Component {
 	};
 
 	renderLinks() {
-		const {
-			isJetpackLogin,
-			isGutenboardingLogin,
-			locale,
-			showCheckYourEmail,
-			translate,
-		} = this.props;
-
-		if ( showCheckYourEmail ) {
-			return null;
-		}
+		const { isJetpackLogin, isGutenboardingLogin, locale, translate } = this.props;
 
 		// The email address from the URL (if present) is added to the login
 		// parameters in this.onClickEnterPasswordInstead(). But it's left out
@@ -109,16 +99,6 @@ class MagicLogin extends React.Component {
 				</a>
 			</div>
 		);
-	}
-
-	renderLocaleSuggestions() {
-		const { locale, path, showCheckYourEmail } = this.props;
-
-		if ( showCheckYourEmail ) {
-			return null;
-		}
-
-		return <LocaleSuggestions locale={ locale } path={ path } />;
 	}
 
 	renderGutenboardingLogo() {
@@ -158,13 +138,13 @@ class MagicLogin extends React.Component {
 				{ this.props.isJetpackLogin && <JetpackHeader /> }
 				{ this.props.isGutenboardingLogin && this.renderGutenboardingLogo() }
 
-				{ this.renderLocaleSuggestions() }
+				{ ! this.props.showCheckYourEmail && <LocaleSuggestions path={ this.props.path } /> }
 
 				<GlobalNotices id="notices" />
 
 				<RequestLoginEmailForm { ...requestLoginEmailFormProps } />
 
-				{ this.renderLinks() }
+				{ ! this.props.showCheckYourEmail && this.renderLinks() }
 			</Main>
 		);
 	}

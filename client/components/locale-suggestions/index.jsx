@@ -77,6 +77,6 @@ export class LocaleSuggestions extends Component {
 	}
 }
 
-export default connect( state => ( {
+export default connect( ( state ) => ( {
 	localeSuggestions: getLocaleSuggestions( state ),
 } ) )( LocaleSuggestions );

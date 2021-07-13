@@ -6,11 +6,10 @@ import React from 'react';
 /**
  * Internal dependencies
  */
-import config from '@automattic/calypso-config';
 import { getCurrentUser } from 'calypso/state/current-user/selectors';
 import { setSection } from 'calypso/state/ui/actions';
 import { setLocale } from 'calypso/state/ui/language/actions';
-import { isTranslatedIncompletely } from 'calypso/lib/i18n-utils/utils';
+import { getLanguage, isTranslatedIncompletely } from 'calypso/lib/i18n-utils';
 
 const noop = () => {};
 
@@ -47,24 +46,54 @@ export function setSectionMiddleware( section ) {
 	};
 }
 
-export function setLocaleMiddleware( context, next ) {
-	const currentUser = getCurrentUser( context.store.getState() );
-
-	if ( context.params.lang ) {
-		context.lang = context.params.lang;
-	} else if ( currentUser ) {
-		const shouldFallbackToDefaultLocale =
-			currentUser.use_fallback_for_incomplete_languages &&
-			isTranslatedIncompletely( currentUser.localeSlug );
-
-		context.lang = shouldFallbackToDefaultLocale
-			? config( 'i18n_default_locale_slug' )
-			: currentUser.localeSlug;
+function browserLocaleSuggestion() {
+	if ( typeof window === 'object' && 'languages' in window.navigator ) {
+		for ( const langSlug of window.navigator.languages ) {
+			const language = getLanguage( langSlug.toLowerCase() );
+			if ( language ) {
+				return language.langSlug;
+			}
+		}
 	}
 
-	context.store.dispatch( setLocale( context.lang || config( 'i18n_default_locale_slug' ) ) );
-	next();
+	return null;
 }
+
+export const setLocaleMiddleware = ( param = 'lang' ) => ( context, next ) => {
+	const paramsLocale = context.params[ param ];
+	if ( paramsLocale ) {
+		const language = getLanguage( paramsLocale );
+		if ( language.parentLangSlug ) {
+			context.lang = language.parentLangSlug;
+			context.langVariant = language.langSlug;
+		} else {
+			context.lang = language.langSlug;
+			context.langVariant = null;
+		}
+	} else {
+		const currentUser = getCurrentUser( context.store.getState() );
+		if (
+			currentUser &&
+			currentUser.localeSlug &&
+			! (
+				currentUser.use_fallback_for_incomplete_languages &&
+				isTranslatedIncompletely( currentUser.localeSlug )
+			)
+		) {
+			context.lang = currentUser.localeSlug;
+			context.langVariant = currentUser.localeVariant;
+		} else {
+			const browserLang = browserLocaleSuggestion();
+			if ( browserLang ) {
+				context.lang = browserLang;
+				context.langVariant = null;
+			}
+		}
+	}
+
+	context.store.dispatch( setLocale( context.lang, context.langVariant ) );
+	next();
+};
 
 /**
  * Composes multiple handlers into one.

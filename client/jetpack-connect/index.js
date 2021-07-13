@@ -9,7 +9,7 @@ import page from 'page';
 import config from '@automattic/calypso-config';
 import * as controller from './controller';
 import { siteSelection } from 'calypso/my-sites/controller';
-import { makeLayout, render as clientRender } from 'calypso/controller';
+import { makeLayout, render as clientRender, setLocaleMiddleware } from 'calypso/controller';
 import { getLanguageRouteParam } from 'calypso/lib/i18n-utils';
 import jetpackPlans from 'calypso/my-sites/plans/jetpack-plans';
 import { OFFER_RESET_FLOW_TYPES } from 'calypso/jetpack-connect/flow-types';
@@ -40,6 +40,7 @@ export default function () {
 		`/jetpack/connect/:type(${ planTypeString })/:interval(yearly|monthly)?/${ locale }`,
 		controller.redirectToSiteLessCheckout,
 		controller.redirectWithoutLocaleIfLoggedIn,
+		setLocaleMiddleware( 'locale' ),
 		controller.loginBeforeJetpackSearch,
 		controller.persistMobileAppFlow,
 		controller.setMasterbar,
@@ -68,6 +69,7 @@ export default function () {
 	page(
 		`/jetpack/connect/authorize/${ locale }`,
 		controller.redirectWithoutLocaleIfLoggedIn,
+		setLocaleMiddleware( 'locale' ),
 		controller.setMasterbar,
 		controller.authorizeOrSignup,
 		makeLayout,

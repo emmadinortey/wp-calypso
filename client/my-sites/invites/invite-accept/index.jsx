@@ -131,14 +131,6 @@ class InviteAccept extends React.Component {
 		await this.props.redirectToLogout( window.location.href );
 	};
 
-	localeSuggestions = () => {
-		if ( this.props.user || ! this.props.locale ) {
-			return;
-		}
-
-		return <LocaleSuggestions path={ this.props.path } locale={ this.props.locale } />;
-	};
-
 	renderForm = () => {
 		const { invite } = this.state;
 
@@ -237,11 +229,11 @@ class InviteAccept extends React.Component {
 			'is-error': !! this.isInvalidInvite(),
 		} );
 		const { invite } = this.state;
-		const { user } = this.props;
+		const { user, path } = this.props;
 
 		return (
 			<div className="invite-accept">
-				{ this.localeSuggestions() }
+				{ ! user && <LocaleSuggestions path={ path } /> }
 				<div className={ formClasses }>
 					{ this.isMatchEmailError() && user && (
 						<Notice
