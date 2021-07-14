@@ -4,6 +4,7 @@
 import { use, select } from '@wordpress/data';
 import { registerPlugin } from '@wordpress/plugins';
 import { applyFilters } from '@wordpress/hooks';
+import { __ } from '@wordpress/i18n';
 import { find, isEqual } from 'lodash';
 import debugFactory from 'debug';
 
@@ -11,14 +12,17 @@ import debugFactory from 'debug';
  * Internal dependencies
  */
 import tracksRecordEvent from './tracking/track-record-event';
-import delegateEventTracking from './tracking/delegate-event-tracking';
+import delegateEventTracking, {
+	registerSubscriber as registerDelegateEventSubscriber,
+} from './tracking/delegate-event-tracking';
 import { trackGlobalStylesTabSelected } from './tracking/wpcom-block-editor-global-styles-tab-selected';
-import { buildGlobalStylesContentEvents } from './utils';
+import { buildGlobalStylesContentEvents, getFlattenedBlockNames } from './utils';
 
 // Debugger.
 const debug = debugFactory( 'wpcom-block-editor:tracking' );
 
 const noop = () => {};
+let ignoreNextReplaceBlocksAction = false;
 
 /**
  * Global handler.
@@ -294,6 +298,11 @@ const trackBlockRemoval = ( blocks ) => {
  * @returns {void}
  */
 const trackBlockReplacement = ( originalBlockIds, blocks, ...args ) => {
+	if ( ignoreNextReplaceBlocksAction ) {
+		ignoreNextReplaceBlocksAction = false;
+		return;
+	}
+
 	const patternName = maybeTrackPatternInsertion( { ...args, blocks_replaced: true } );
 
 	const insert_method = getBlockInserterUsed( originalBlockIds );
@@ -399,6 +408,34 @@ const trackDisableComplementaryArea = ( scope ) => {
 	}
 };
 
+const trackSaveEntityRecord = ( kind, name, record ) => {
+	if ( kind === 'postType' && name === 'wp_template_part' ) {
+		const variationSlug = record.area !== 'uncategorized' ? record.area : undefined;
+		if ( document.querySelector( '.edit-site-template-part-converter__modal' ) ) {
+			ignoreNextReplaceBlocksAction = true;
+			const convertedParentBlocks = select( 'core/block-editor' ).getBlocksByClientId(
+				select( 'core/block-editor' ).getSelectedBlockClientIds()
+			);
+			// We fire the event with and without the block names. We do this to
+			// make sure the event is tracked all the time. The block names
+			// might become a string that's too long and as a result it will
+			// fail because of URL length browser limitations.
+			tracksRecordEvent( 'wpcom_block_editor_convert_to_template_part', {
+				variation_slug: variationSlug,
+			} );
+			tracksRecordEvent( 'wpcom_block_editor_convert_to_template_part', {
+				variation_slug: variationSlug,
+				block_names: getFlattenedBlockNames( convertedParentBlocks ).join( ',' ),
+			} );
+		} else {
+			tracksRecordEvent( 'wpcom_block_editor_create_template_part', {
+				variation_slug: variationSlug,
+				content: record.content ? record.content : undefined,
+			} );
+		}
+	}
+};
+
 /**
  * Track list view open and close events.
  *
@@ -429,7 +466,20 @@ const trackSiteEditorCreateTemplate = ( { slug } ) => {
 	} );
 };
 
+/**
+ * Flag used to track the first call of tracking
+ * `wpcom_block_editor_nav_sidebar_item_edit`. When the site editor is loaded
+ * with query params specified to load a specific template/template part, then
+ * `setTemplate`, `setTemplatePart` or `setPage` is called editor load. We don't
+ * want to track the first call so we use this flag to track it.
+ */
+let isSiteEditorFirstSidebarItemEditCalled = false;
 const trackSiteEditorChangeTemplate = ( id, slug ) => {
+	if ( ! isSiteEditorFirstSidebarItemEditCalled ) {
+		isSiteEditorFirstSidebarItemEditCalled = true;
+		return;
+	}
+
 	tracksRecordEvent( 'wpcom_block_editor_nav_sidebar_item_edit', {
 		item_type: 'template',
 		item_id: id,
@@ -438,10 +488,48 @@ const trackSiteEditorChangeTemplate = ( id, slug ) => {
 };
 
 const trackSiteEditorChangeTemplatePart = ( id ) => {
+	if ( ! isSiteEditorFirstSidebarItemEditCalled ) {
+		isSiteEditorFirstSidebarItemEditCalled = true;
+		return;
+	}
+
 	tracksRecordEvent( 'wpcom_block_editor_nav_sidebar_item_edit', {
 		item_type: 'template_part',
 		item_id: id,
 	} );
+};
+
+/**
+ * Variable used to track the time of the last `trackSiteEditorChange` function
+ * call. This is used to debounce the function because it's called twice due to
+ * a bug. We prefer the first call because that's when the
+ * `getNavigationPanelActiveMenu` function returns the actual active menu.
+ *
+ * Keep this for backward compatibility.
+ * Fixed in: https://github.com/WordPress/gutenberg/pull/33286
+ */
+let lastTrackSiteEditorChangeContentCall = 0;
+const trackSiteEditorChangeContent = ( { type, slug } ) => {
+	if ( Date.now() - lastTrackSiteEditorChangeContentCall < 50 ) {
+		return;
+	}
+
+	if ( ! isSiteEditorFirstSidebarItemEditCalled ) {
+		isSiteEditorFirstSidebarItemEditCalled = true;
+		return;
+	}
+
+	const activeMenu = select( 'core/edit-site' ).getNavigationPanelActiveMenu();
+	if ( ! type && activeMenu === 'content-categories' ) {
+		type = 'taxonomy_category';
+	}
+
+	tracksRecordEvent( 'wpcom_block_editor_nav_sidebar_item_edit', {
+		item_type: type,
+		item_slug: slug,
+	} );
+
+	lastTrackSiteEditorChangeContentCall = Date.now();
 };
 
 /**
@@ -453,6 +541,19 @@ const trackSiteEditorChangeTemplatePart = ( id ) => {
  * @param {object} updates The edits made to the record.
  */
 const trackEditEntityRecord = ( kind, type, id, updates ) => {
+	// When the site editor is loaded without query params specified to which
+	// template or template part to load, then the `setPage`, `setTemplate` and
+	// `setTemplatePart` call is skipped. In this case we want to make sure the
+	// first call is tracked.
+	if (
+		! isSiteEditorFirstSidebarItemEditCalled &&
+		kind === 'postType' &&
+		( type === 'wp_template' || type === 'wp_template_part' )
+	) {
+		isSiteEditorFirstSidebarItemEditCalled = true;
+		return;
+	}
+
 	if ( kind === 'postType' && type === 'wp_global_styles' ) {
 		const editedEntity = select( 'core' ).getEditedEntityRecord( kind, type, id );
 		const entityContent = JSON.parse( editedEntity?.content );
@@ -514,6 +615,7 @@ const REDUX_TRACKING = {
 	core: {
 		undo: 'wpcom_block_editor_undo_performed',
 		redo: 'wpcom_block_editor_redo_performed',
+		saveEntityRecord: trackSaveEntityRecord,
 		editEntityRecord: trackEditEntityRecord,
 		saveEditedEntityRecord: trackSaveEditedEntityRecord,
 	},
@@ -538,6 +640,7 @@ const REDUX_TRACKING = {
 		addTemplate: trackSiteEditorCreateTemplate,
 		setTemplate: trackSiteEditorChangeTemplate,
 		setTemplatePart: trackSiteEditorChangeTemplatePart,
+		setPage: trackSiteEditorChangeContent,
 	},
 	'core/edit-post': {
 		setIsListViewOpened: trackListViewToggle,
@@ -578,12 +681,20 @@ if (
 					const tracker = trackers[ actionName ];
 					actions[ actionName ] = ( ...args ) => {
 						debug( 'action "%s" called with %o arguments', actionName, [ ...args ] );
-						if ( typeof tracker === 'string' ) {
-							// Simple track - just based on the event name.
-							tracksRecordEvent( tracker );
-						} else if ( typeof tracker === 'function' ) {
-							// Advanced tracking - call function.
-							tracker( ...args );
+						// We use a try-catch here to make sure the `originalAction`
+						// is always called. We don't want to break the original
+						// behaviour when our tracking throws an error.
+						try {
+							if ( typeof tracker === 'string' ) {
+								// Simple track - just based on the event name.
+								tracksRecordEvent( tracker );
+							} else if ( typeof tracker === 'function' ) {
+								// Advanced tracking - call function.
+								tracker( ...args );
+							}
+						} catch ( err ) {
+							// eslint-disable-next-line no-console
+							console.error( err );
 						}
 						return originalAction( ...args );
 					};
@@ -611,4 +722,15 @@ if (
 			return null;
 		},
 	} );
+
+	registerDelegateEventSubscriber(
+		'wpcom-block-editor-template-part-detach-blocks',
+		'before',
+		( mapping, event, target ) => {
+			const item = target.querySelector( '.components-menu-item__item' );
+			if ( item?.innerText === __( 'Detach blocks from template part' ) ) {
+				ignoreNextReplaceBlocksAction = true;
+			}
+		}
+	);
 }
