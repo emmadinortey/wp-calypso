@@ -92,7 +92,7 @@ function shouldQueueReducerEvent( cacheStatus: CacheStatus, action: ShoppingCart
 	return false;
 }
 
-function shoppingCartReducer(
+export function shoppingCartReducer(
 	state: ShoppingCartState,
 	action: ShoppingCartAction
 ): ShoppingCartState {
@@ -279,7 +279,7 @@ function shoppingCartReducer(
 	}
 }
 
-function getInitialShoppingCartState(): ShoppingCartState {
+export function getInitialShoppingCartState(): ShoppingCartState {
 	return {
 		responseCart: emptyResponseCart,
 		cacheStatus: 'fresh',

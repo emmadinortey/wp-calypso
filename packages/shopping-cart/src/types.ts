@@ -17,15 +17,37 @@ import type {
 
 export * from './shopping-cart-endpoint';
 
+export interface ShoppingCartReducerManager {
+	getState: () => ShoppingCartState;
+	dispatch: ( action: ShoppingCartAction ) => void;
+}
+
+export type ShoppingCartReducer = (
+	state: ShoppingCartState,
+	action: ShoppingCartAction
+) => ShoppingCartState;
+
+export type GetCartFunction = ( cartKey: string ) => Promise< ResponseCart >;
+export type SetCartFunction = (
+	cartKey: string,
+	requestCart: RequestCart
+) => Promise< ResponseCart >;
+
 export interface ShoppingCartManagerArguments {
 	cartKey: string | number | null | undefined;
-	setCart: ( cartKey: string, requestCart: RequestCart ) => Promise< ResponseCart >;
-	getCart: ( cartKey: string ) => Promise< ResponseCart >;
+	setCart: SetCartFunction;
+	getCart: GetCartFunction;
 	options?: ShoppingCartManagerOptions;
 }
 
 export interface ShoppingCartManagerOptions {
 	refetchOnWindowFocus?: boolean;
+}
+
+export type GetManagerForKey = ( cartKey: string ) => Promise< ResponseCart >;
+
+export interface ShoppingCartManagerClient {
+	getManagerForKey: GetManagerForKey;
 }
 
 export interface ShoppingCartManager {
