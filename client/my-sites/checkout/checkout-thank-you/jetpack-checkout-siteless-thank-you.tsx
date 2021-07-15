@@ -4,6 +4,7 @@
 import React, { FC, useState, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslate } from 'i18n-calypso';
+import page from 'page';
 import classNames from 'classnames';
 import { Card } from '@automattic/components';
 
@@ -21,7 +22,6 @@ import {
 	getProductName,
 } from 'calypso/state/products-list/selectors';
 import { cleanUrl } from 'calypso/jetpack-connect/utils.js';
-import { getCurrentUserEmail } from 'calypso/state/current-user/selectors';
 import PageViewTracker from 'calypso/lib/analytics/page-view-tracker';
 import { recordTracksEvent } from 'calypso/state/analytics/actions';
 import { requestUpdateJetpackCheckoutSupportTicket } from 'calypso/state/jetpack-checkout/actions';
@@ -36,7 +36,6 @@ interface Props {
 const JetpackCheckoutSitelessThankYou: FC< Props > = ( { productSlug, receiptId = 0 } ) => {
 	const translate = useTranslate();
 	const dispatch = useDispatch();
-	const userEmail = useSelector( getCurrentUserEmail );
 
 	const hasProductInfo = productSlug !== 'no_product';
 
@@ -56,7 +55,7 @@ const JetpackCheckoutSitelessThankYou: FC< Props > = ( { productSlug, receiptId 
 		'https://jetpack.com/support/getting-started-with-jetpack/';
 
 	// TODO: Get the correct link to schedule 15min Happiness support session. This link is not correct.
-	const happinessAppointmentLink = `/schedule-happiness-appointment?user=${ userEmail }`;
+	const happinessAppointmentLink = `/checkout/jetpack/schedule-happiness-appointment`;
 
 	const [ siteInput, setSiteInput ] = useState( '' );
 
@@ -81,10 +80,9 @@ const JetpackCheckoutSitelessThankYou: FC< Props > = ( { productSlug, receiptId 
 
 	useEffect( () => {
 		if ( supportTicketStatus && supportTicketStatus === 'success' ) {
-			// redirect to "Site submitted & email sent" UI page. /checkout/jetpack/thank-you-completed/:product_slug
-			console.log( 'Site URL was submitted sucessfully.' );
+			page.redirect( `/checkout/jetpack/thank-you-completed/no-site/${ productSlug }` );
 		}
-	}, [ supportTicketStatus, receiptId ] );
+	}, [ supportTicketStatus, productSlug, receiptId ] );
 
 	return (
 		<Main fullWidthLayout className="jetpack-checkout-siteless-thank-you">
