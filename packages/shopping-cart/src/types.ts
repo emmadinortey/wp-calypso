@@ -48,9 +48,16 @@ export type GetManagerForKey = ( cartKey: string ) => Promise< ResponseCart >;
 
 export interface ShoppingCartManagerClient {
 	getManagerForKey: GetManagerForKey;
+	setDefaultCartKey: ( cartKey: string ) => void;
+	getDefaultManager: () => ShoppingCartManager;
 }
 
+export type UnsubscribeFunction = () => void;
+
+export type SubscribeCallback = () => void;
+
 export interface ShoppingCartManager {
+	subscribe: ( callback: SubscribeCallback ) => UnsubscribeFunction;
 	isLoading: boolean;
 	loadingError: string | null | undefined;
 	loadingErrorType: ShoppingCartError | undefined;

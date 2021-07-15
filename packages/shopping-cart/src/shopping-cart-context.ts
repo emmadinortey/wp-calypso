@@ -6,7 +6,7 @@ import { createContext } from 'react';
 /**
  * Internal dependencies
  */
-import type { ShoppingCartManager } from './types';
+import type { ShoppingCartManagerClient } from './types';
 
-const ShoppingCartContext = createContext< ShoppingCartManager | undefined >( undefined );
+const ShoppingCartContext = createContext< ShoppingCartManagerClient | undefined >( undefined );
 export default ShoppingCartContext;

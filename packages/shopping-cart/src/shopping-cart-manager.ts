@@ -1,6 +1,7 @@
 /**
  * Internal dependencies
  */
+import debugFactory from 'debug';
 import type {
 	GetCartFunction,
 	SetCartFunction,
@@ -12,9 +13,27 @@ import type {
 	ShoppingCartMiddleware,
 	ShoppingCartReducerManager,
 	ShoppingCartAction,
+	TempResponseCart,
+	CouponStatus,
+	CacheStatus,
+	ShoppingCartError,
+	DispatchAndWaitForValid,
+	AddProductsToCart,
+	ReplaceProductsInCart,
+	RemoveProductFromCart,
+	ReplaceProductInCart,
+	UpdateTaxLocationInCart,
+	ApplyCouponToCart,
+	RemoveCouponFromCart,
+	ReloadCartFromServer,
+	ResponseCart,
+	RequestCartProduct,
 } from './types';
 import { createCartSyncMiddleware } from './sync';
 import { getInitialShoppingCartState, shoppingCartReducer } from './use-shopping-cart-reducer';
+import { createRequestCartProducts } from './create-request-cart-product';
+
+const debug = debugFactory( 'shopping-cart:shopping-cart-manager' );
 
 function createShoppingCartReducer(
 	middlewares: ShoppingCartMiddleware[]
@@ -45,132 +64,118 @@ function createManager( {
 }: ShoppingCartManagerArguments ): ShoppingCartManager {
 	const setServerCart = ( cartParam: RequestCart ) => setCart( String( cartKey ), cartParam );
 	const getServerCart = () => getCart( String( cartKey ) );
-	const syncCartToServer = () => createCartSyncMiddleware( setServerCart );
-	const cartMiddleware = () => [ syncCartToServer ];
+	const syncCartToServer = createCartSyncMiddleware( setServerCart );
+	const cartMiddleware = [ syncCartToServer ];
 	const { getState, dispatch } = createShoppingCartReducer( cartMiddleware );
 
-	const responseCart: TempResponseCart = hookState.responseCart;
-	const couponStatus: CouponStatus = hookState.couponStatus;
-	const cacheStatus: CacheStatus = hookState.cacheStatus;
-	const loadingError: string | undefined = hookState.loadingError;
-	const loadingErrorType: ShoppingCartError | undefined = hookState.loadingErrorType;
+	function generateManager() {
+		const hookState = getState();
+		const responseCart: TempResponseCart = hookState.responseCart;
+		const couponStatus: CouponStatus = hookState.couponStatus;
+		const cacheStatus: CacheStatus = hookState.cacheStatus;
+		const loadingError: string | undefined = hookState.loadingError;
+		const loadingErrorType: ShoppingCartError | undefined = hookState.loadingErrorType;
 
-	const dispatchAndWaitForValid: DispatchAndWaitForValid = useCallback(
-		( action ) => {
+		const cartValidCallbacks = [];
+
+		const dispatchAndWaitForValid: DispatchAndWaitForValid = ( action ) => {
 			debug( 'recevied action', action );
 			return new Promise< ResponseCart >( ( resolve ) => {
-				isMounted.current && hookDispatch( action );
-				cartValidCallbacks.current.push( resolve );
+				dispatch( action );
+				cartValidCallbacks.push( resolve );
 			} );
-		},
-		[ hookDispatch, isMounted ]
-	);
+		};
 
-	const addProductsToCart: AddProductsToCart = useCallback(
-		( products ) =>
+		const addProductsToCart: AddProductsToCart = ( products ) =>
 			dispatchAndWaitForValid( {
 				type: 'CART_PRODUCTS_ADD',
 				products: createRequestCartProducts( products ),
-			} ),
-		[ dispatchAndWaitForValid ]
-	);
+			} );
 
-	const replaceProductsInCart: ReplaceProductsInCart = useCallback(
-		( products ) =>
+		const replaceProductsInCart: ReplaceProductsInCart = ( products ) =>
 			dispatchAndWaitForValid( {
 				type: 'CART_PRODUCTS_REPLACE_ALL',
 				products: createRequestCartProducts( products ),
-			} ),
-		[ dispatchAndWaitForValid ]
-	);
+			} );
 
-	const removeProductFromCart: RemoveProductFromCart = useCallback(
-		( uuidToRemove ) => dispatchAndWaitForValid( { type: 'REMOVE_CART_ITEM', uuidToRemove } ),
-		[ dispatchAndWaitForValid ]
-	);
+		const removeProductFromCart: RemoveProductFromCart = ( uuidToRemove ) =>
+			dispatchAndWaitForValid( { type: 'REMOVE_CART_ITEM', uuidToRemove } );
 
-	const replaceProductInCart: ReplaceProductInCart = useCallback(
-		( uuidToReplace: string, productPropertiesToChange: Partial< RequestCartProduct > ) =>
+		const replaceProductInCart: ReplaceProductInCart = (
+			uuidToReplace: string,
+			productPropertiesToChange: Partial< RequestCartProduct >
+		) =>
 			dispatchAndWaitForValid( {
 				type: 'CART_PRODUCT_REPLACE',
 				uuidToReplace,
 				productPropertiesToChange,
-			} ),
-		[ dispatchAndWaitForValid ]
-	);
+			} );
 
-	const updateLocation: UpdateTaxLocationInCart = useCallback(
-		( location ) => dispatchAndWaitForValid( { type: 'SET_LOCATION', location } ),
-		[ dispatchAndWaitForValid ]
-	);
+		const updateLocation: UpdateTaxLocationInCart = ( location ) =>
+			dispatchAndWaitForValid( { type: 'SET_LOCATION', location } );
 
-	const applyCoupon: ApplyCouponToCart = useCallback(
-		( newCoupon ) => dispatchAndWaitForValid( { type: 'ADD_COUPON', couponToAdd: newCoupon } ),
-		[ dispatchAndWaitForValid ]
-	);
+		const applyCoupon: ApplyCouponToCart = ( newCoupon ) =>
+			dispatchAndWaitForValid( { type: 'ADD_COUPON', couponToAdd: newCoupon } );
 
-	const removeCoupon: RemoveCouponFromCart = useCallback(
-		() => dispatchAndWaitForValid( { type: 'REMOVE_COUPON' } ),
-		[ dispatchAndWaitForValid ]
-	);
+		const removeCoupon: RemoveCouponFromCart = () =>
+			dispatchAndWaitForValid( { type: 'REMOVE_COUPON' } );
 
-	const reloadFromServer: ReloadCartFromServer = useCallback(
-		() => dispatchAndWaitForValid( { type: 'CART_RELOAD' } ),
-		[ dispatchAndWaitForValid ]
-	);
+		const reloadFromServer: ReloadCartFromServer = () =>
+			dispatchAndWaitForValid( { type: 'CART_RELOAD' } );
 
-	const isLoading = cacheStatus === 'fresh' || cacheStatus === 'fresh-pending' || ! cartKey;
-	const loadingErrorForManager = cacheStatus === 'error' ? loadingError : null;
-	const isPendingUpdate =
-		hookState.queuedActions.length > 0 || cacheStatus !== 'valid' || ! cartKey;
+		const isLoading = cacheStatus === 'fresh' || cacheStatus === 'fresh-pending' || ! cartKey;
+		const loadingErrorForManager = cacheStatus === 'error' ? loadingError : null;
+		const isPendingUpdate =
+			hookState.queuedActions.length > 0 || cacheStatus !== 'valid' || ! cartKey;
 
-	const responseCartWithoutTempProducts = useMemo(
-		() => convertTempResponseCartToResponseCart( responseCart ),
-		[ responseCart ]
-	);
-	const lastValidResponseCart = useRef< ResponseCart >( responseCartWithoutTempProducts );
-	if ( cacheStatus === 'valid' ) {
-		lastValidResponseCart.current = responseCartWithoutTempProducts;
+		const responseCartWithoutTempProducts = useMemo(
+			() => convertTempResponseCartToResponseCart( responseCart ),
+			[ responseCart ]
+		);
+		const lastValidResponseCart = useRef< ResponseCart >( responseCartWithoutTempProducts );
+		if ( cacheStatus === 'valid' ) {
+			lastValidResponseCart.current = responseCartWithoutTempProducts;
+		}
+
+		// Refetch when the window is refocused
+		useRefetchOnFocus(
+			options ?? {},
+			cacheStatus,
+			responseCartWithoutTempProducts,
+			reloadFromServer
+		);
+
+		useEffect( () => {
+			if ( cartValidCallbacks.current.length === 0 ) {
+				return;
+			}
+			debug( `cacheStatus changed to ${ cacheStatus } and cartValidCallbacks exist` );
+			if ( hookState.queuedActions.length === 0 && cacheStatus === 'valid' ) {
+				debug( 'calling cartValidCallbacks' );
+				cartValidCallbacks.current.forEach( ( callback ) =>
+					callback( lastValidResponseCart.current )
+				);
+				cartValidCallbacks.current = [];
+			}
+		}, [ hookState.queuedActions, cacheStatus ] );
+
+		return {
+			isLoading,
+			loadingError: loadingErrorForManager,
+			loadingErrorType,
+			isPendingUpdate,
+			addProductsToCart,
+			removeProductFromCart,
+			applyCoupon,
+			removeCoupon,
+			couponStatus,
+			updateLocation,
+			replaceProductInCart,
+			replaceProductsInCart,
+			reloadFromServer,
+			responseCart: lastValidResponseCart.current,
+		};
 	}
-
-	// Refetch when the window is refocused
-	useRefetchOnFocus(
-		options ?? {},
-		cacheStatus,
-		responseCartWithoutTempProducts,
-		reloadFromServer
-	);
-
-	useEffect( () => {
-		if ( cartValidCallbacks.current.length === 0 ) {
-			return;
-		}
-		debug( `cacheStatus changed to ${ cacheStatus } and cartValidCallbacks exist` );
-		if ( hookState.queuedActions.length === 0 && cacheStatus === 'valid' ) {
-			debug( 'calling cartValidCallbacks' );
-			cartValidCallbacks.current.forEach( ( callback ) =>
-				callback( lastValidResponseCart.current )
-			);
-			cartValidCallbacks.current = [];
-		}
-	}, [ hookState.queuedActions, cacheStatus ] );
-
-	return {
-		isLoading,
-		loadingError: loadingErrorForManager,
-		loadingErrorType,
-		isPendingUpdate,
-		addProductsToCart,
-		removeProductFromCart,
-		applyCoupon,
-		removeCoupon,
-		couponStatus,
-		updateLocation,
-		replaceProductInCart,
-		replaceProductsInCart,
-		reloadFromServer,
-		responseCart: lastValidResponseCart.current,
-	};
 }
 
 export function createShoppingCartManagerClient( {
@@ -180,7 +185,7 @@ export function createShoppingCartManagerClient( {
 }: {
 	getCart: GetCartFunction;
 	setCart: SetCartFunction;
-	options: ShoppingCartManagerOptions;
+	options?: ShoppingCartManagerOptions;
 } ): ShoppingCartManagerClient {
 	const managers: Record< string, ShoppingCartManager > = {};
 
@@ -194,5 +199,7 @@ export function createShoppingCartManagerClient( {
 
 	return {
 		getManagerForKey,
+		setDefaultCartKey,
+		getDefaultManager,
 	};
 }

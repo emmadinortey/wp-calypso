@@ -7,8 +7,8 @@ import React from 'react';
  * Internal dependencies
  */
 import type { RequestCart, ResponseCart, ShoppingCartManagerOptions } from './types';
-import useShoppingCartManager from './use-shopping-cart-manager';
 import ShoppingCartContext from './shopping-cart-context';
+import { createShoppingCartManagerClient } from './shopping-cart-manager';
 
 export default function ShoppingCartProvider( {
 	cartKey,
@@ -23,15 +23,16 @@ export default function ShoppingCartProvider( {
 	options?: ShoppingCartManagerOptions;
 	children: React.ReactNode;
 } ): JSX.Element {
-	const shoppingCartManager = useShoppingCartManager( {
-		cartKey,
-		setCart,
+	const cartManagerClient = createShoppingCartManagerClient( {
 		getCart,
+		setCart,
 		options,
 	} );
 
+	cartManagerClient.setDefaultCartKey( cartKey );
+
 	return (
-		<ShoppingCartContext.Provider value={ shoppingCartManager }>
+		<ShoppingCartContext.Provider value={ cartManagerClient }>
 			{ children }
 		</ShoppingCartContext.Provider>
 	);
