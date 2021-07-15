@@ -9,19 +9,13 @@ import type {
 	ShoppingCartManagerClient,
 	ShoppingCartManagerController,
 	ShoppingCartManager,
-	ShoppingCartManagerArguments,
 	RequestCart,
 	ShoppingCartMiddleware,
-	ShoppingCartReducerManager,
 	ShoppingCartReducerDispatch,
 	ShoppingCartAction,
 	ShoppingCartState,
 	SubscribeCallback,
 	UnsubscribeFunction,
-	TempResponseCart,
-	CouponStatus,
-	CacheStatus,
-	ShoppingCartError,
 	DispatchAndWaitForValid,
 	AddProductsToCart,
 	ReplaceProductsInCart,
@@ -34,7 +28,7 @@ import type {
 	ResponseCart,
 	RequestCartProduct,
 } from './types';
-import { createCartSyncMiddleware } from './sync';
+import { createCartSyncMiddleware, createCartInitMiddleware } from './sync';
 import { getInitialShoppingCartState, shoppingCartReducer } from './use-shopping-cart-reducer';
 import { createRequestCartProducts } from './create-request-cart-product';
 import { getEmptyResponseCart } from './empty-carts';
@@ -103,10 +97,30 @@ function createManagerController(
 	getState: () => ShoppingCartState,
 	dispatch: ShoppingCartReducerDispatch
 ): ShoppingCartManagerController {
+	function fetchInitialCart(): void {
+		const { queuedActions, cacheStatus } = getState();
+		if ( queuedActions.length === 0 && cacheStatus === 'fresh' ) {
+			dispatch( { type: 'FETCH_INITIAL_RESPONSE_CART' } );
+			dispatch( { type: 'GET_CART_FROM_SERVER' } );
+		}
+	}
+
+	function prepareInvalidCartForSync(): void {
+		const { queuedActions, cacheStatus } = getState();
+		if ( queuedActions.length === 0 && cacheStatus === 'invalid' ) {
+			dispatch( { type: 'REQUEST_UPDATED_RESPONSE_CART' } );
+			dispatch( { type: 'SYNC_CART_TO_SERVER' } );
+		}
+	}
+
 	const { responseCart: initialResponseCart } = getState();
 	let lastValidResponseCart = convertTempResponseCartToResponseCart( initialResponseCart );
-	function updateLastValidResponseCart( cart: ResponseCart ): void {
-		lastValidResponseCart = cart;
+	function updateLastValidResponseCart(): void {
+		const { queuedActions, cacheStatus, responseCart: tempResponseCart } = getState();
+		if ( queuedActions.length === 0 && cacheStatus === 'valid' ) {
+			const responseCart = convertTempResponseCartToResponseCart( tempResponseCart );
+			lastValidResponseCart = responseCart;
+		}
 	}
 
 	let actionPromises: ( ( cart: ResponseCart ) => void )[] = [];
@@ -114,7 +128,6 @@ function createManagerController(
 		const { queuedActions, cacheStatus, responseCart: tempResponseCart } = getState();
 		if ( queuedActions.length === 0 && cacheStatus === 'valid' ) {
 			const responseCart = convertTempResponseCartToResponseCart( tempResponseCart );
-			updateLastValidResponseCart( responseCart );
 			actionPromises.forEach( ( callback ) => callback( responseCart ) );
 			actionPromises = [];
 		}
@@ -127,7 +140,12 @@ function createManagerController(
 		} );
 	}
 
-	let subscribedClients: SubscribeCallback[] = [ resolveActionPromisesIfValid ];
+	let subscribedClients: SubscribeCallback[] = [
+		fetchInitialCart,
+		updateLastValidResponseCart,
+		resolveActionPromisesIfValid,
+		prepareInvalidCartForSync,
+	];
 	function subscribe( callback: SubscribeCallback ): UnsubscribeFunction {
 		subscribedClients.push( callback );
 		return () => {
@@ -175,8 +193,9 @@ export function createShoppingCartManagerClient( {
 } ): ShoppingCartManagerClient {
 	const statesByCartKey: Record< string, ShoppingCartState > = {};
 	const middlewaresByCartKey: Record< string, ShoppingCartMiddleware[] > = {};
+	const controllersByCartKey: Record< string, ShoppingCartManagerController > = {};
 
-	function getManagerForKey( cartKey: string | undefined ): ShoppingCartManagerController {
+	function forCartKey( cartKey: string | undefined ): ShoppingCartManagerController {
 		if ( ! cartKey ) {
 			return noopManager;
 		}
@@ -189,25 +208,37 @@ export function createShoppingCartManagerClient( {
 		const getServerCart = () => getCart( String( cartKey ) );
 		if ( ! middlewaresByCartKey[ cartKey ] ) {
 			const syncCartToServer = createCartSyncMiddleware( setServerCart );
-			middlewaresByCartKey[ cartKey ] = [ syncCartToServer ];
+			const initializeCartFromServer = createCartInitMiddleware( getServerCart );
+			middlewaresByCartKey[ cartKey ] = [ initializeCartFromServer, syncCartToServer ];
 		}
 
-		const dispatch = ( action: ShoppingCartAction ) =>
-			( statesByCartKey[ cartKey ] = shoppingCartReducer( statesByCartKey[ cartKey ], action ) );
+		if ( ! controllersByCartKey[ cartKey ] ) {
+			const dispatch = ( action: ShoppingCartAction ) => {
+				setTimeout( () => {
+					statesByCartKey[ cartKey ] = shoppingCartReducer( statesByCartKey[ cartKey ], action );
+				} );
+			};
 
-		const dispatchWithMiddleware = ( action: ShoppingCartAction ) => {
-			middlewaresByCartKey[ cartKey ].forEach( ( middlewareFn ) =>
-				middlewareFn( action, statesByCartKey[ cartKey ], dispatch )
+			const dispatchWithMiddleware = ( action: ShoppingCartAction ) => {
+				setTimeout( () => {
+					middlewaresByCartKey[ cartKey ].forEach( ( middlewareFn ) =>
+						middlewareFn( action, statesByCartKey[ cartKey ], dispatch )
+					);
+				} );
+				dispatch( action );
+			};
+
+			debug( `creating cart manager controller for "${ cartKey }"` );
+			controllersByCartKey[ cartKey ] = createManagerController(
+				() => statesByCartKey[ cartKey ],
+				dispatchWithMiddleware
 			);
-			dispatch( action );
-		};
+		}
 
-		return createManagerController( () => statesByCartKey[ cartKey ], dispatchWithMiddleware );
+		return controllersByCartKey[ cartKey ];
 	}
 
 	return {
-		getManagerForKey,
-		setDefaultCartKey,
-		getDefaultManager,
+		forCartKey,
 	};
 }

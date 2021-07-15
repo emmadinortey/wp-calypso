@@ -19,11 +19,6 @@ export * from './shopping-cart-endpoint';
 
 export type ShoppingCartReducerDispatch = ( action: ShoppingCartAction ) => void;
 
-export interface ShoppingCartReducerManager {
-	getState: () => ShoppingCartState;
-	dispatch: ShoppingCartReducerDispatch;
-}
-
 export type ShoppingCartReducer = (
 	state: ShoppingCartState,
 	action: ShoppingCartAction
@@ -46,12 +41,12 @@ export interface ShoppingCartManagerOptions {
 	refetchOnWindowFocus?: boolean;
 }
 
-export type GetManagerForKey = ( cartKey: string | undefined ) => ShoppingCartManagerController;
+export type GetManagerControllerForKey = (
+	cartKey: string | undefined
+) => ShoppingCartManagerController;
 
 export interface ShoppingCartManagerClient {
-	getManagerForKey: GetManagerForKey;
-	setDefaultCartKey: ( cartKey: string ) => void;
-	getDefaultManager: () => ShoppingCartManager;
+	forCartKey: GetManagerControllerForKey;
 }
 
 export type UnsubscribeFunction = () => void;
@@ -127,6 +122,7 @@ export type CacheStatus = 'fresh' | 'fresh-pending' | 'valid' | 'invalid' | 'pen
 export type CouponStatus = 'fresh' | 'pending' | 'applied' | 'rejected';
 
 export type ShoppingCartAction =
+	| { type: 'GET_CART_FROM_SERVER' }
 	| { type: 'SYNC_CART_TO_SERVER' }
 	| { type: 'CLEAR_QUEUED_ACTIONS' }
 	| { type: 'REMOVE_CART_ITEM'; uuidToRemove: string }

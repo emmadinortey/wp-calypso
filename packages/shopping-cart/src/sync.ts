@@ -61,3 +61,41 @@ export function createCartSyncMiddleware(
 			} );
 	};
 }
+
+export function createCartInitMiddleware(
+	getServerCart: () => Promise< ResponseCart >
+): ShoppingCartMiddleware {
+	return function initializeCartFromServer(
+		action: ShoppingCartAction,
+		state: ShoppingCartState,
+		dispatch: Dispatch< ShoppingCartAction >
+	): void {
+		if ( action.type !== 'GET_CART_FROM_SERVER' ) {
+			return;
+		}
+
+		if ( state.cacheStatus !== 'fresh' ) {
+			debug( 'not initializing cart; cacheStatus is not fresh' );
+			return;
+		}
+		debug( 'initializing cart' );
+
+		getServerCart()
+			.then( ( response ) => {
+				debug( 'initialized cart is', response );
+				const initialResponseCart = convertRawResponseCartToResponseCart( response );
+				dispatch( {
+					type: 'RECEIVE_INITIAL_RESPONSE_CART',
+					initialResponseCart,
+				} );
+			} )
+			.catch( ( error ) => {
+				debug( 'error while initializing cart', error );
+				dispatch( {
+					type: 'RAISE_ERROR',
+					error: 'GET_SERVER_CART_ERROR',
+					message: error.message,
+				} );
+			} );
+	};
+}
