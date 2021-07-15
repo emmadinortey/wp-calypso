@@ -54,7 +54,6 @@ const JetpackCheckoutSitelessThankYou: FC< Props > = ( { productSlug, receiptId 
 	const jetpackInstallInstructionsLink =
 		'https://jetpack.com/support/getting-started-with-jetpack/';
 
-	// TODO: Get the correct link to schedule 15min Happiness support session. This link is not correct.
 	const happinessAppointmentLink = `/checkout/jetpack/schedule-happiness-appointment`;
 
 	const [ siteInput, setSiteInput ] = useState( '' );
@@ -200,7 +199,7 @@ const JetpackCheckoutSitelessThankYou: FC< Props > = ( { productSlug, receiptId 
 						<h2>{ translate( 'Do you need help?' ) }</h2>
 						<p>
 							{ translate(
-								'If you prefer to setup Jetpack with the help of our Happiness Engineers, {{a}}schedule a 15 min call now{{/a}}.',
+								'If you prefer to setup Jetpack with the help of our Happiness Engineers, {{a}}schedule a 15 minute call now{{/a}}.',
 								{
 									components: {
 										a: (
