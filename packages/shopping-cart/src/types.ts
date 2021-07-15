@@ -17,9 +17,11 @@ import type {
 
 export * from './shopping-cart-endpoint';
 
+export type ShoppingCartReducerDispatch = ( action: ShoppingCartAction ) => void;
+
 export interface ShoppingCartReducerManager {
 	getState: () => ShoppingCartState;
-	dispatch: ( action: ShoppingCartAction ) => void;
+	dispatch: ShoppingCartReducerDispatch;
 }
 
 export type ShoppingCartReducer = (
@@ -44,7 +46,7 @@ export interface ShoppingCartManagerOptions {
 	refetchOnWindowFocus?: boolean;
 }
 
-export type GetManagerForKey = ( cartKey: string ) => Promise< ResponseCart >;
+export type GetManagerForKey = ( cartKey: string | undefined ) => ShoppingCartManagerController;
 
 export interface ShoppingCartManagerClient {
 	getManagerForKey: GetManagerForKey;
@@ -56,8 +58,12 @@ export type UnsubscribeFunction = () => void;
 
 export type SubscribeCallback = () => void;
 
-export interface ShoppingCartManager {
+export interface ShoppingCartManagerController {
 	subscribe: ( callback: SubscribeCallback ) => UnsubscribeFunction;
+	getManager: () => ShoppingCartManager;
+}
+
+export interface ShoppingCartManager {
 	isLoading: boolean;
 	loadingError: string | null | undefined;
 	loadingErrorType: ShoppingCartError | undefined;
