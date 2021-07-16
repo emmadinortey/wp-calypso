@@ -5,7 +5,6 @@ import debugFactory from 'debug';
 import type {
 	GetCartFunction,
 	SetCartFunction,
-	ShoppingCartManagerOptions,
 	ShoppingCartManagerClient,
 	ShoppingCartManagerController,
 	ShoppingCartManager,
@@ -189,11 +188,9 @@ const noopManager: ShoppingCartManagerController = {
 export function createShoppingCartManagerClient( {
 	getCart,
 	setCart,
-	options,
 }: {
 	getCart: GetCartFunction;
 	setCart: SetCartFunction;
-	options?: ShoppingCartManagerOptions;
 } ): ShoppingCartManagerClient {
 	const statesByCartKey: Record< string, ShoppingCartState > = {};
 	const middlewaresByCartKey: Record< string, ShoppingCartMiddleware[] > = {};
