@@ -30,15 +30,9 @@ export type SetCartFunction = (
 	requestCart: RequestCart
 ) => Promise< ResponseCart >;
 
-export interface ShoppingCartManagerArguments {
-	cartKey: string | number | null | undefined;
-	setCart: SetCartFunction;
-	getCart: GetCartFunction;
-	options?: ShoppingCartManagerOptions;
-}
-
 export interface ShoppingCartManagerOptions {
 	refetchOnWindowFocus?: boolean;
+	defaultCartKey?: string | undefined;
 }
 
 export type GetManagerForKey = ( cartKey: string | undefined ) => ShoppingCartManager;

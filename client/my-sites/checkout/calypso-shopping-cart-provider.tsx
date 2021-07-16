@@ -47,20 +47,20 @@ export default function CalypsoShoppingCartProvider( {
 
 	const getCart = isLoggedOutCart || isNoSiteCart ? () => Promise.resolve( emptyCart ) : undefined;
 
-	const cartKey = useCartKey();
+	const defaultCartKey = useCartKey();
 
 	const refetchOnWindowFocus = true;
 
 	const options = useMemo(
 		() => ( {
 			refetchOnWindowFocus,
+			defaultCartKey,
 		} ),
-		[ refetchOnWindowFocus ]
+		[ refetchOnWindowFocus, defaultCartKey ]
 	);
 
 	return (
 		<ShoppingCartProvider
-			cartKey={ cartKey }
 			getCart={ getCart || wpcomGetCart }
 			setCart={ wpcomSetCart }
 			options={ options }
@@ -72,7 +72,6 @@ export default function CalypsoShoppingCartProvider( {
 }
 
 function CalypsoShoppingCartMessages() {
-	const cartKey = useCartKey();
-	const { responseCart, isLoading } = useShoppingCart( cartKey );
+	const { responseCart, isLoading } = useShoppingCart();
 	return <CartMessages cart={ responseCart } isLoadingCart={ isLoading } />;
 }
