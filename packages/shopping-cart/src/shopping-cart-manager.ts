@@ -26,6 +26,7 @@ import type {
 	ResponseCart,
 	RequestCartProduct,
 	ShoppingCartActionCreators,
+	ShoppingCartManagerSubscribe,
 } from './types';
 import { createCartSyncMiddleware, createCartInitMiddleware } from './sync';
 import { getInitialShoppingCartState, shoppingCartReducer } from './use-shopping-cart-reducer';
@@ -38,7 +39,8 @@ const debug = debugFactory( 'shopping-cart:shopping-cart-manager' );
 function createManager(
 	state: ShoppingCartState,
 	lastValidResponseCart: ResponseCart,
-	actionCreators: ShoppingCartActionCreators
+	actionCreators: ShoppingCartActionCreators,
+	subscribe: ShoppingCartManagerSubscribe
 ): ShoppingCartManager {
 	const { cacheStatus, queuedActions, couponStatus, loadingErrorType, loadingError } = state;
 	const isLoading = cacheStatus === 'fresh' || cacheStatus === 'fresh-pending';
@@ -46,6 +48,7 @@ function createManager(
 	const loadingErrorForManager = cacheStatus === 'error' ? loadingError : null;
 
 	return {
+		subscribe,
 		...actionCreators,
 		isLoading,
 		loadingError: loadingErrorForManager,
@@ -157,32 +160,28 @@ function createManagerController(
 	};
 
 	return {
-		subscribe,
-		getManager: () => createManager( getState(), lastValidResponseCart, actionCreators ),
+		getManager: () => createManager( getState(), lastValidResponseCart, actionCreators, subscribe ),
 	};
 }
 
 const emptyCart = getEmptyResponseCart();
 
-const noopManager: ShoppingCartManagerController = {
+const noopManager: ShoppingCartManager = {
 	subscribe: () => () => null,
-	getManager: () => ( {
-		isLoading: true,
-		loadingError: undefined,
-		loadingErrorType: undefined,
-		isPendingUpdate: true,
-		couponStatus: 'fresh',
-		addProductsToCart: ( products ) =>
-			products ? Promise.resolve( emptyCart ) : Promise.reject(),
-		removeProductFromCart: ( uuid ) => ( uuid ? Promise.resolve( emptyCart ) : Promise.reject() ),
-		applyCoupon: ( coupon ) => ( coupon ? Promise.resolve( emptyCart ) : Promise.reject() ),
-		removeCoupon: () => Promise.resolve( emptyCart ),
-		updateLocation: ( location ) => ( location ? Promise.resolve( emptyCart ) : Promise.reject() ),
-		replaceProductInCart: () => Promise.resolve( emptyCart ),
-		replaceProductsInCart: () => Promise.resolve( emptyCart ),
-		reloadFromServer: () => Promise.resolve( emptyCart ),
-		responseCart: emptyCart,
-	} ),
+	isLoading: true,
+	loadingError: undefined,
+	loadingErrorType: undefined,
+	isPendingUpdate: true,
+	couponStatus: 'fresh',
+	addProductsToCart: ( products ) => ( products ? Promise.resolve( emptyCart ) : Promise.reject() ),
+	removeProductFromCart: ( uuid ) => ( uuid ? Promise.resolve( emptyCart ) : Promise.reject() ),
+	applyCoupon: ( coupon ) => ( coupon ? Promise.resolve( emptyCart ) : Promise.reject() ),
+	removeCoupon: () => Promise.resolve( emptyCart ),
+	updateLocation: ( location ) => ( location ? Promise.resolve( emptyCart ) : Promise.reject() ),
+	replaceProductInCart: () => Promise.resolve( emptyCart ),
+	replaceProductsInCart: () => Promise.resolve( emptyCart ),
+	reloadFromServer: () => Promise.resolve( emptyCart ),
+	responseCart: emptyCart,
 };
 
 export function createShoppingCartManagerClient( {
@@ -196,7 +195,7 @@ export function createShoppingCartManagerClient( {
 	const middlewaresByCartKey: Record< string, ShoppingCartMiddleware[] > = {};
 	const controllersByCartKey: Record< string, ShoppingCartManagerController > = {};
 
-	function forCartKey( cartKey: string | undefined ): ShoppingCartManagerController {
+	function forCartKey( cartKey: string | undefined ): ShoppingCartManager {
 		if ( ! cartKey ) {
 			return noopManager;
 		}
@@ -236,7 +235,7 @@ export function createShoppingCartManagerClient( {
 			);
 		}
 
-		return controllersByCartKey[ cartKey ];
+		return controllersByCartKey[ cartKey ].getManager();
 	}
 
 	return {

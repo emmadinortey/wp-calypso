@@ -9,13 +9,13 @@ import { useContext, useReducer, useEffect } from 'react';
 import type { ShoppingCartManager } from './types';
 import ShoppingCartContext from './shopping-cart-context';
 
-export default function useShoppingCart(): ShoppingCartManager {
+export default function useShoppingCart( cartKey: string | undefined ): ShoppingCartManager {
 	const managerClient = useContext( ShoppingCartContext );
 	if ( ! managerClient ) {
 		throw new Error( 'useShoppingCart must be used inside a ShoppingCartProvider' );
 	}
 
-	const manager = managerClient.getDefaultManager();
+	const manager = managerClient.forCartKey( cartKey );
 
 	// Re-render when the cart changes
 	const [ , forceUpdate ] = useReducer( () => [], [] );

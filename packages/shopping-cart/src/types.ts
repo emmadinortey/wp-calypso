@@ -41,24 +41,24 @@ export interface ShoppingCartManagerOptions {
 	refetchOnWindowFocus?: boolean;
 }
 
-export type GetManagerControllerForKey = (
-	cartKey: string | undefined
-) => ShoppingCartManagerController;
+export type GetManagerForKey = ( cartKey: string | undefined ) => ShoppingCartManager;
 
 export interface ShoppingCartManagerClient {
-	forCartKey: GetManagerControllerForKey;
+	forCartKey: GetManagerForKey;
 }
 
 export type UnsubscribeFunction = () => void;
 
 export type SubscribeCallback = () => void;
 
+export type ShoppingCartManagerSubscribe = ( callback: SubscribeCallback ) => UnsubscribeFunction;
+
 export interface ShoppingCartManagerController {
-	subscribe: ( callback: SubscribeCallback ) => UnsubscribeFunction;
 	getManager: () => ShoppingCartManager;
 }
 
 export interface ShoppingCartManager extends ShoppingCartActionCreators {
+	subscribe: ShoppingCartManagerSubscribe;
 	isLoading: boolean;
 	loadingError: string | null | undefined;
 	loadingErrorType: ShoppingCartError | undefined;
