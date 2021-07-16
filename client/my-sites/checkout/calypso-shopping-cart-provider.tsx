@@ -14,8 +14,7 @@ import type { RequestCart } from '@automattic/shopping-cart';
  * Internal Dependencies
  */
 import wp from 'calypso/lib/wp';
-import { getSelectedSite } from 'calypso/state/ui/selectors';
-import getCartKey from './get-cart-key';
+import useCartKey from './use-cart-key';
 import CartMessages from 'calypso/my-sites/checkout/cart/cart-messages';
 import { isUserLoggedIn } from 'calypso/state/current-user/selectors';
 
@@ -31,8 +30,6 @@ export default function CalypsoShoppingCartProvider( {
 }: {
 	children: React.ReactNode;
 } ): JSX.Element {
-	const selectedSite = useSelector( getSelectedSite );
-	const cartKeysThatDoNotAllowRefetch = [ 'no-site', 'no-user' ];
 	const isLoggedOutCart = ! useSelector( isUserLoggedIn );
 	const currentUrlPath = window.location.pathname;
 	const searchParams = new URLSearchParams( window.location.search );
@@ -50,12 +47,9 @@ export default function CalypsoShoppingCartProvider( {
 
 	const getCart = isLoggedOutCart || isNoSiteCart ? () => Promise.resolve( emptyCart ) : undefined;
 
-	const finalCartKey = getCartKey( { selectedSite, isLoggedOutCart, isNoSiteCart } );
+	const cartKey = useCartKey();
 
-	const refetchOnWindowFocus: boolean =
-		Boolean( selectedSite?.ID ) &&
-		Boolean( finalCartKey ) &&
-		! cartKeysThatDoNotAllowRefetch.includes( String( finalCartKey ) );
+	const refetchOnWindowFocus = true;
 
 	const options = useMemo(
 		() => ( {
@@ -66,7 +60,7 @@ export default function CalypsoShoppingCartProvider( {
 
 	return (
 		<ShoppingCartProvider
-			cartKey={ finalCartKey }
+			cartKey={ cartKey }
 			getCart={ getCart || wpcomGetCart }
 			setCart={ wpcomSetCart }
 			options={ options }
@@ -78,6 +72,7 @@ export default function CalypsoShoppingCartProvider( {
 }
 
 function CalypsoShoppingCartMessages() {
-	const { responseCart, isLoading } = useShoppingCart();
+	const cartKey = useCartKey();
+	const { responseCart, isLoading } = useShoppingCart( cartKey );
 	return <CartMessages cart={ responseCart } isLoadingCart={ isLoading } />;
 }
