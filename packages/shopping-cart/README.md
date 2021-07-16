@@ -10,16 +10,21 @@ This package provides the following API, as well as a comprehensive set of TypeS
 
 A React context provider component which should be used near the top level of the render tree to grant access to the shopping cart to the components in the tree via the [useShoppingCart](#useShoppingCart) hook or the [withShoppingCart](#withShoppingCart) higher-order-component.
 
-It requires three props:
+Its props are:
 
-- `cartKey: string | number | undefined | null`. Every cart is keyed by a cart key; usually this is the WordPress.com site ID (preferred, because it is always unique) or site slug. It can also be `'no-site'` or `'no-user'`. If `undefined` or `null`, the cart will not be loaded and the `isLoading` value will be `true`; this can be used to temporarily disable the cart.
 - `getCart: ( cartKey: string ) => Promise< ResponseCart >`. This is an async function that will fetch the cart from the server.
 - `setCart: ( cartKey: string, requestCart: RequestCart ) => Promise< ResponseCart >`. This is an async function that will send an updated cart to the server.
 - `options?: { refetchOnWindowFocus?: boolean }`. Optional. Can be used to trigger `getCart` when the window or tab is hidden and then refocused.
 
 ## useShoppingCart
 
-This is a React hook that can be used in any child component under [ShoppingCartProvider](#ShoppingCartProvider) to return a `ShoppingCartManager` object. That object contains the following properties. Note that the action functions in this object are requests only; they do not guarantee that the request will be fulfilled by the shopping cart API.
+This is a React hook that can be used in any child component under [ShoppingCartProvider](#ShoppingCartProvider) to return a `ShoppingCartManager` object.
+
+The hook has one required argument:
+
+- `cartKey: string | number | undefined | null`. Every cart is keyed by a cart key; usually this is the WordPress.com site ID (preferred, because it is always unique) or site slug. It can also be `'no-site'` or `'no-user'`. If `undefined` or `null`, the cart will not be loaded and the `isLoading` value will be `true`; this can be used to temporarily disable the cart.
+
+The `ShoppingCartManager` object contains the following properties. Note that the action functions in this object are requests only; they do not guarantee that the request will be fulfilled by the shopping cart API.
 
 - `responseCart: ResponseCart`. The full cart object itself. For this object's API, see the TypeScript type. This object should be considered **read-only**. To make changes to the cart, use the action functions in `ShoppingCartManager` like `addProductsToCart`.
 - `isLoading: boolean`. True if the cart is still loading from the server. This will only be true during the initial load for a `cartKey` or when the `cartKey` is `undefined|null`. When updating an existing cart, `isPendingUpdate` will be true instead.
