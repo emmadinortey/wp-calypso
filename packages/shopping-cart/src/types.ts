@@ -58,21 +58,13 @@ export interface ShoppingCartManagerController {
 	getManager: () => ShoppingCartManager;
 }
 
-export interface ShoppingCartManager {
+export interface ShoppingCartManager extends ShoppingCartActionCreators {
 	isLoading: boolean;
 	loadingError: string | null | undefined;
 	loadingErrorType: ShoppingCartError | undefined;
 	isPendingUpdate: boolean;
-	addProductsToCart: AddProductsToCart;
-	removeProductFromCart: RemoveProductFromCart;
-	applyCoupon: ApplyCouponToCart;
-	removeCoupon: RemoveCouponFromCart;
-	couponStatus: CouponStatus;
-	updateLocation: UpdateTaxLocationInCart;
-	replaceProductInCart: ReplaceProductInCart;
-	replaceProductsInCart: ReplaceProductsInCart;
-	reloadFromServer: ReloadCartFromServer;
 	responseCart: ResponseCart;
+	couponStatus: CouponStatus;
 }
 
 export type ReplaceProductInCart = (
@@ -142,6 +134,17 @@ export type ShoppingCartAction =
 	| { type: 'REQUEST_UPDATED_RESPONSE_CART' }
 	| { type: 'RECEIVE_UPDATED_RESPONSE_CART'; updatedResponseCart: ResponseCart }
 	| { type: 'RAISE_ERROR'; error: ShoppingCartError; message: string };
+
+export interface ShoppingCartActionCreators {
+	addProductsToCart: AddProductsToCart;
+	removeProductFromCart: RemoveProductFromCart;
+	applyCoupon: ApplyCouponToCart;
+	removeCoupon: RemoveCouponFromCart;
+	updateLocation: UpdateTaxLocationInCart;
+	replaceProductInCart: ReplaceProductInCart;
+	replaceProductsInCart: ReplaceProductsInCart;
+	reloadFromServer: ReloadCartFromServer;
+}
 
 export type ShoppingCartError = 'GET_SERVER_CART_ERROR' | 'SET_SERVER_CART_ERROR';
 

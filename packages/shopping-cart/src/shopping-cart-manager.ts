@@ -16,7 +16,6 @@ import type {
 	ShoppingCartState,
 	SubscribeCallback,
 	UnsubscribeFunction,
-	DispatchAndWaitForValid,
 	AddProductsToCart,
 	ReplaceProductsInCart,
 	RemoveProductFromCart,
@@ -27,6 +26,7 @@ import type {
 	ReloadCartFromServer,
 	ResponseCart,
 	RequestCartProduct,
+	ShoppingCartActionCreators,
 } from './types';
 import { createCartSyncMiddleware, createCartInitMiddleware } from './sync';
 import { getInitialShoppingCartState, shoppingCartReducer } from './use-shopping-cart-reducer';
@@ -38,58 +38,21 @@ const debug = debugFactory( 'shopping-cart:shopping-cart-manager' );
 
 function createManager(
 	state: ShoppingCartState,
-	dispatch: DispatchAndWaitForValid,
-	lastValidResponseCart: ResponseCart
+	lastValidResponseCart: ResponseCart,
+	actionCreators: ShoppingCartActionCreators
 ): ShoppingCartManager {
-	const removeCoupon: RemoveCouponFromCart = () => dispatch( { type: 'REMOVE_COUPON' } );
-	const addProductsToCart: AddProductsToCart = ( products ) =>
-		dispatch( {
-			type: 'CART_PRODUCTS_ADD',
-			products: createRequestCartProducts( products ),
-		} );
-	const removeProductFromCart: RemoveProductFromCart = ( uuidToRemove ) =>
-		dispatch( { type: 'REMOVE_CART_ITEM', uuidToRemove } );
-	const replaceProductsInCart: ReplaceProductsInCart = ( products ) =>
-		dispatch( {
-			type: 'CART_PRODUCTS_REPLACE_ALL',
-			products: createRequestCartProducts( products ),
-		} );
-	const replaceProductInCart: ReplaceProductInCart = (
-		uuidToReplace: string,
-		productPropertiesToChange: Partial< RequestCartProduct >
-	) =>
-		dispatch( {
-			type: 'CART_PRODUCT_REPLACE',
-			uuidToReplace,
-			productPropertiesToChange,
-		} );
-	const updateLocation: UpdateTaxLocationInCart = ( location ) =>
-		dispatch( { type: 'SET_LOCATION', location } );
-	const applyCoupon: ApplyCouponToCart = ( newCoupon ) =>
-		dispatch( { type: 'ADD_COUPON', couponToAdd: newCoupon } );
-
-	const reloadFromServer: ReloadCartFromServer = () => dispatch( { type: 'CART_RELOAD' } );
-
 	const { cacheStatus, queuedActions, couponStatus, loadingErrorType, loadingError } = state;
 	const isLoading = cacheStatus === 'fresh' || cacheStatus === 'fresh-pending';
 	const isPendingUpdate = queuedActions.length > 0 || cacheStatus !== 'valid';
 	const loadingErrorForManager = cacheStatus === 'error' ? loadingError : null;
 
-	// TODO: we need to memoize these values (and the whole thing?) when they do not change
 	return {
+		...actionCreators,
 		isLoading,
 		loadingError: loadingErrorForManager,
 		loadingErrorType,
 		isPendingUpdate,
-		addProductsToCart,
-		removeProductFromCart,
-		applyCoupon,
-		removeCoupon,
 		couponStatus,
-		updateLocation,
-		replaceProductInCart,
-		replaceProductsInCart,
-		reloadFromServer,
 		responseCart: lastValidResponseCart,
 	};
 }
@@ -154,9 +117,49 @@ function createManagerController(
 		};
 	}
 
+	const removeCoupon: RemoveCouponFromCart = () =>
+		dispatchAndWaitForValid( { type: 'REMOVE_COUPON' } );
+	const addProductsToCart: AddProductsToCart = ( products ) =>
+		dispatchAndWaitForValid( {
+			type: 'CART_PRODUCTS_ADD',
+			products: createRequestCartProducts( products ),
+		} );
+	const removeProductFromCart: RemoveProductFromCart = ( uuidToRemove ) =>
+		dispatchAndWaitForValid( { type: 'REMOVE_CART_ITEM', uuidToRemove } );
+	const replaceProductsInCart: ReplaceProductsInCart = ( products ) =>
+		dispatchAndWaitForValid( {
+			type: 'CART_PRODUCTS_REPLACE_ALL',
+			products: createRequestCartProducts( products ),
+		} );
+	const replaceProductInCart: ReplaceProductInCart = (
+		uuidToReplace: string,
+		productPropertiesToChange: Partial< RequestCartProduct >
+	) =>
+		dispatchAndWaitForValid( {
+			type: 'CART_PRODUCT_REPLACE',
+			uuidToReplace,
+			productPropertiesToChange,
+		} );
+	const updateLocation: UpdateTaxLocationInCart = ( location ) =>
+		dispatchAndWaitForValid( { type: 'SET_LOCATION', location } );
+	const applyCoupon: ApplyCouponToCart = ( newCoupon ) =>
+		dispatchAndWaitForValid( { type: 'ADD_COUPON', couponToAdd: newCoupon } );
+	const reloadFromServer: ReloadCartFromServer = () =>
+		dispatchAndWaitForValid( { type: 'CART_RELOAD' } );
+	const actionCreators = {
+		reloadFromServer,
+		applyCoupon,
+		updateLocation,
+		replaceProductInCart,
+		replaceProductsInCart,
+		removeProductFromCart,
+		addProductsToCart,
+		removeCoupon,
+	};
+
 	return {
 		subscribe,
-		getManager: () => createManager( getState(), dispatchAndWaitForValid, lastValidResponseCart ),
+		getManager: () => createManager( getState(), lastValidResponseCart, actionCreators ),
 	};
 }
 
