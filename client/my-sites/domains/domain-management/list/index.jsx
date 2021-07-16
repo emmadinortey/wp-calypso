@@ -32,7 +32,7 @@ import canCurrentUser from 'calypso/state/selectors/can-current-user';
 import isDomainOnlySite from 'calypso/state/selectors/is-domain-only-site';
 import isSiteAutomatedTransfer from 'calypso/state/selectors/is-site-automated-transfer';
 import DomainToPlanNudge from 'calypso/blocks/domain-to-plan-nudge';
-import { type as domainTypes, type } from 'calypso/lib/domains/constants';
+import { type } from 'calypso/lib/domains/constants';
 import {
 	composeAnalytics,
 	recordGoogleEvent,
@@ -290,13 +290,47 @@ export class List extends React.Component {
 		} );
 	}
 
+	showUpdatePrimaryDomainSuccessNotice( domainName ) {
+		const { translate } = this.props;
+		this.props.successNotice(
+			translate(
+				'Primary domain changed: all domains will redirect to {{em}}%(domainName)s{{/em}}.',
+				{ args: { domainName }, components: { em: <em /> } }
+			),
+			{ duration: 10000, isPersistent: true }
+		);
+	}
+
+	showUpdatePrimaryDomainErrorNotice( errorMessage ) {
+		const { translate } = this.props;
+		this.props.errorNotice(
+			errorMessage ||
+				translate( "Something went wrong and we couldn't change your primary domain." ),
+			{ duration: 10000, isPersistent: true }
+		);
+	}
+
+	handleUpdatePrimaryDomainWpcom = ( domainName ) => {
+		if ( this.state.settingPrimaryDomain ) {
+			return;
+		}
+
+		return this.setPrimaryDomain( domainName ).then(
+			() => {
+				this.setState( { primaryDomainIndex: null } );
+				this.showUpdatePrimaryDomainSuccessNotice( domainName );
+			},
+			( error ) => {
+				this.showUpdatePrimaryDomainErrorNotice( error.message );
+			}
+		);
+	};
+
 	handleUpdatePrimaryDomainOptionClick = ( index, domain ) => {
 		return this.handleUpdatePrimaryDomain( index, domain, 'item_option_click' );
 	};
 
 	handleUpdatePrimaryDomain = ( index, domain, mode = 'item_select_legacy' ) => {
-		const { translate } = this.props;
-
 		if ( this.state.settingPrimaryDomain ) {
 			return;
 		}
@@ -325,24 +359,14 @@ export class List extends React.Component {
 					changePrimaryDomainModeEnabled: false,
 				} );
 
-				this.props.successNotice(
-					translate(
-						'Primary domain changed: all domains will redirect to {{em}}%(domainName)s{{/em}}.',
-						{ args: { domainName: domain.name }, components: { em: <em /> } }
-					),
-					{ duration: 10000, isPersistent: true }
-				);
+				this.showUpdatePrimaryDomainSuccessNotice( domain.name );
 			},
 			( error ) => {
 				this.setState( {
 					settingPrimaryDomain: false,
 					primaryDomainIndex: currentPrimaryIndex,
 				} );
-				this.props.errorNotice(
-					error.message ||
-						translate( "Something went wrong and we couldn't change your primary domain." ),
-					{ duration: 10000, isPersistent: true }
-				);
+				this.showUpdatePrimaryDomainErrorNotice( error.message );
 			}
 		);
 	};
@@ -425,21 +449,14 @@ export class List extends React.Component {
 			return times( 3, ( n ) => <ListItemPlaceholder key={ `item-${ n }` } /> );
 		}
 
-		const {
-			currentRoute,
-			translate,
-			selectedSite,
-			renderAllSites,
-			isDomainOnly,
-			hasSingleSite,
-		} = this.props;
+		const { currentRoute, translate, selectedSite, hasSingleSite } = this.props;
 
 		const { changePrimaryDomainModeEnabled, primaryDomainIndex, settingPrimaryDomain } = this.state;
 
-		const domains =
-			selectedSite.jetpack || ( renderAllSites && isDomainOnly )
-				? this.filterOutWpcomDomains( this.props.domains )
-				: this.props.domains;
+		const domains = this.filterOutWpcomDomains( this.props.domains );
+		const wpcomDomain = this.props.domains.find(
+			( domain ) => domain.type === type.WPCOM || domain.isWpcomStagingDomain
+		);
 
 		const domainListItems = domains.map( ( domain, index ) => (
 			<DomainItem
@@ -471,8 +488,6 @@ export class List extends React.Component {
 			</Card>
 		);
 
-		const wpcomDomain = domains.filter( ( domain ) => domain.type === domainTypes.WPCOM )[ 0 ];
-
 		return [
 			<QuerySitePurchases key="query-purchases" siteId={ selectedSite.ID } />,
 			<QuerySiteFeatures key="query-features" siteId={ selectedSite.ID } />,
@@ -484,7 +499,15 @@ export class List extends React.Component {
 			/>,
 			...domainListItems,
 			manageAllDomainsLink,
-			wpcomDomain && <WpcomDomainItem key="wpcom-domain-items" domain={ wpcomDomain } />,
+			wpcomDomain && (
+				<WpcomDomainItem
+					key="wpcom-domain-items"
+					currentRoute={ currentRoute }
+					domain={ wpcomDomain }
+					site={ selectedSite }
+					onMakePrimary={ this.handleUpdatePrimaryDomainWpcom }
+				/>
+			),
 		];
 	}
 
