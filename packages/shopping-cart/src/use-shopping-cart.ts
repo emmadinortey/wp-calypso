@@ -8,6 +8,7 @@ import { useContext, useReducer, useEffect } from 'react';
  */
 import type { ShoppingCartManager } from './types';
 import ShoppingCartContext from './shopping-cart-context';
+import useRefetchOnFocus from './use-refetch-on-focus';
 
 export default function useShoppingCart( cartKey: string | undefined ): ShoppingCartManager {
 	const managerClient = useContext( ShoppingCartContext );
@@ -22,6 +23,8 @@ export default function useShoppingCart( cartKey: string | undefined ): Shopping
 	useEffect( () => {
 		return manager.subscribe( forceUpdate );
 	}, [ manager ] );
+
+	useRefetchOnFocus( cartKey );
 
 	return manager;
 }

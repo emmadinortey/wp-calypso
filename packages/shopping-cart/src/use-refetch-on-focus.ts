@@ -1,13 +1,14 @@
 /**
  * External dependencies
  */
-import { useEffect } from 'react';
+import { useEffect, useContext } from 'react';
 import debugFactory from 'debug';
 
 /**
  * Internal dependencies
  */
-import type { CacheStatus, ShoppingCartManagerOptions, ResponseCart } from './types';
+import ShoppingCartContext from './shopping-cart-context';
+import ShoppingCartOptionsContext from './shopping-cart-options-context';
 
 const debug = debugFactory( 'shopping-cart:use-refetch-on-focus' );
 
@@ -19,18 +20,29 @@ function convertMsToSecs( ms: number ): number {
 	return Math.floor( ms / 1000 );
 }
 
-export default function useRefetchOnFocus(
-	options: ShoppingCartManagerOptions,
-	cacheStatus: CacheStatus,
-	lastCart: ResponseCart,
-	refetch: () => void
-): void {
+export default function useRefetchOnFocus( cartKey: string | undefined ): void {
+	const managerClient = useContext( ShoppingCartContext );
+	if ( ! managerClient ) {
+		throw new Error( 'useRefetchOnFocus must be used inside a ShoppingCartProvider' );
+	}
+
+	const {
+		isLoading,
+		isPendingUpdate,
+		loadingError,
+		responseCart: lastCart,
+		reloadFromServer,
+	} = managerClient.forCartKey( cartKey );
+	const { refetchOnWindowFocus } = useContext( ShoppingCartOptionsContext ) ?? {};
+
 	useEffect( () => {
-		if ( ! options.refetchOnWindowFocus ) {
+		if ( ! refetchOnWindowFocus ) {
 			return;
 		}
 		// Refresh only if the cart is not pending any other operations
-		if ( cacheStatus !== 'valid' && cacheStatus !== 'error' ) {
+		const isCartInvalid = isLoading || isPendingUpdate;
+		const isError = !! loadingError;
+		if ( isCartInvalid && ! isError ) {
 			return;
 		}
 
@@ -69,7 +81,7 @@ export default function useRefetchOnFocus(
 			}
 
 			debug( 'window was refocused; refetching' );
-			refetch();
+			reloadFromServer();
 		}
 
 		window.addEventListener( 'visibilitychange', handleFocusChange );
@@ -81,5 +93,12 @@ export default function useRefetchOnFocus(
 			window.removeEventListener( 'focus', handleFocusChange );
 			window.removeEventListener( 'online', handleFocusChange );
 		};
-	}, [ options.refetchOnWindowFocus, lastCart.cart_generated_at_timestamp, refetch, cacheStatus ] );
+	}, [
+		refetchOnWindowFocus,
+		lastCart.cart_generated_at_timestamp,
+		reloadFromServer,
+		isLoading,
+		isPendingUpdate,
+		loadingError,
+	] );
 }
