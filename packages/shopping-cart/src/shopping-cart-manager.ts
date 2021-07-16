@@ -75,6 +75,7 @@ function createManager(
 	const isPendingUpdate = queuedActions.length > 0 || cacheStatus !== 'valid';
 	const loadingErrorForManager = cacheStatus === 'error' ? loadingError : null;
 
+	// TODO: we need to memoize these values (and the whole thing?) when they do not change
 	return {
 		isLoading,
 		loadingError: loadingErrorForManager,
