@@ -6,7 +6,7 @@ import type {
 	GetCartFunction,
 	SetCartFunction,
 	ShoppingCartManagerClient,
-	ShoppingCartManagerController,
+	ShoppingCartManagerWrapper,
 	ShoppingCartManager,
 	RequestCart,
 	ShoppingCartMiddleware,
@@ -59,10 +59,10 @@ function createManager(
 	};
 }
 
-function createManagerController(
+function createManagerWrapper(
 	getState: () => ShoppingCartState,
 	dispatch: ShoppingCartReducerDispatch
-): ShoppingCartManagerController {
+): ShoppingCartManagerWrapper {
 	function fetchInitialCart(): void {
 		const { queuedActions, cacheStatus } = getState();
 		if ( queuedActions.length === 0 && cacheStatus === 'fresh' ) {
@@ -193,7 +193,7 @@ export function createShoppingCartManagerClient( {
 } ): ShoppingCartManagerClient {
 	const statesByCartKey: Record< string, ShoppingCartState > = {};
 	const middlewaresByCartKey: Record< string, ShoppingCartMiddleware[] > = {};
-	const controllersByCartKey: Record< string, ShoppingCartManagerController > = {};
+	const managerWrappersByCartKey: Record< string, ShoppingCartManagerWrapper > = {};
 
 	function forCartKey( cartKey: string | undefined ): ShoppingCartManager {
 		if ( ! cartKey ) {
@@ -212,7 +212,7 @@ export function createShoppingCartManagerClient( {
 			middlewaresByCartKey[ cartKey ] = [ initializeCartFromServer, syncCartToServer ];
 		}
 
-		if ( ! controllersByCartKey[ cartKey ] ) {
+		if ( ! managerWrappersByCartKey[ cartKey ] ) {
 			const dispatch = ( action: ShoppingCartAction ) => {
 				setTimeout( () => {
 					statesByCartKey[ cartKey ] = shoppingCartReducer( statesByCartKey[ cartKey ], action );
@@ -228,14 +228,14 @@ export function createShoppingCartManagerClient( {
 				dispatch( action );
 			};
 
-			debug( `creating cart manager controller for "${ cartKey }"` );
-			controllersByCartKey[ cartKey ] = createManagerController(
+			debug( `creating cart manager for "${ cartKey }"` );
+			managerWrappersByCartKey[ cartKey ] = createManagerWrapper(
 				() => statesByCartKey[ cartKey ],
 				dispatchWithMiddleware
 			);
 		}
 
-		return controllersByCartKey[ cartKey ].getManager();
+		return managerWrappersByCartKey[ cartKey ].getManager();
 	}
 
 	return {

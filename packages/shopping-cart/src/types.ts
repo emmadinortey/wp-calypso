@@ -53,7 +53,7 @@ export type SubscribeCallback = () => void;
 
 export type ShoppingCartManagerSubscribe = ( callback: SubscribeCallback ) => UnsubscribeFunction;
 
-export interface ShoppingCartManagerController {
+export interface ShoppingCartManagerWrapper {
 	getManager: () => ShoppingCartManager;
 }
 
