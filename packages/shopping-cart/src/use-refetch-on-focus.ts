@@ -16,6 +16,8 @@ const debug = debugFactory( 'shopping-cart:use-refetch-on-focus' );
 // automatic refetch on focus.
 const minimumFetchInterval = 60;
 
+const cartKeysThatDoNotAllowRefetch = [ 'no-site', 'no-user' ];
+
 function convertMsToSecs( ms: number ): number {
 	return Math.floor( ms / 1000 );
 }
@@ -39,6 +41,13 @@ export default function useRefetchOnFocus( cartKey: string | undefined ): void {
 		if ( ! refetchOnWindowFocus ) {
 			return;
 		}
+		if ( ! cartKey ) {
+			return;
+		}
+		if ( ! cartKeysThatDoNotAllowRefetch.includes( cartKey ) ) {
+			return;
+		}
+
 		// Refresh only if the cart is not pending any other operations
 		const isCartInvalid = isLoading || isPendingUpdate;
 		const isError = !! loadingError;
