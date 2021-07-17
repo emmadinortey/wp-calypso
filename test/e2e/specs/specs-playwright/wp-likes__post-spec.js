@@ -65,11 +65,22 @@ describe( DataHelper.createSuiteTitle( 'Likes (Post)' ), function () {
 
 		it( 'Like post as another user', async function () {
 			publishedPostPage = await PublishedPostPage.Expect( page );
-			const loginFlow = new LoginFlow( page, 'defaultUser' );
 
+			await Promise.all( [
+				page.on( 'popup', async ( popupPage ) => {
+					const loginFlow = new LoginFlow( popupPage, 'defaultUser' );
+					await loginFlow.logIn();
+					await popupPage.waitForEvent( 'close' );
+				} ),
+				publishedPostPage.likePost(),
+			] );
+
+			// const loginFlow = new LoginFlow( popupPage, 'defaultUser' );
 			// Clicking the Like button will bring up a new popup, so
 			// specifically call the flow for dealing with logging in from a popup.
-			await Promise.all( [ loginFlow.logInFromPopup(), publishedPostPage.likePost() ] );
+			// await loginFlow.logIn( );
+			// await popupPage.waitForEvent( 'close' );
+			// await Promise.all( [ loginFlow.logInFromPopup(), ] );
 		} );
 	} );
 } );
