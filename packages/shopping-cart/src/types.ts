@@ -39,6 +39,7 @@ export type GetManagerForKey = ( cartKey: string | undefined ) => ShoppingCartMa
 
 export interface ShoppingCartManagerClient {
 	forCartKey: GetManagerForKey;
+	subscribeToCartKey: ( cartKey: string, callback: SubscribeCallback ) => UnsubscribeFunction;
 }
 
 export type UnsubscribeFunction = () => void;

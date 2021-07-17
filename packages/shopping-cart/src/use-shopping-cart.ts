@@ -21,14 +21,21 @@ export default function useShoppingCart( cartKey?: string | undefined ): Shoppin
 	}
 
 	const { defaultCartKey } = useContext( ShoppingCartOptionsContext ) ?? {};
-	debug( `getting cart manager for cartKey ${ cartKey ?? defaultCartKey }` );
-	const manager = managerClient.forCartKey( cartKey ?? defaultCartKey );
+	const finalCartKey = cartKey ?? defaultCartKey;
+	debug( `getting cart manager for cartKey ${ finalCartKey }` );
+	const manager = managerClient.forCartKey( finalCartKey );
 
 	// Re-render when the cart changes
 	const [ , forceUpdate ] = useReducer( () => [], [] );
 	useEffect( () => {
-		return manager.subscribe( forceUpdate );
-	}, [ manager ] );
+		if ( finalCartKey ) {
+			debug( 'subscribing to cartKey', finalCartKey );
+			return managerClient.subscribeToCartKey( finalCartKey, () => {
+				debug( 'cart manager changed; re-rendering' );
+				forceUpdate();
+			} );
+		}
+	}, [ managerClient, finalCartKey ] );
 
 	useRefetchOnFocus( cartKey );
 

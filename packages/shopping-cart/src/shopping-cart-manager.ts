@@ -175,8 +175,19 @@ function createManagerWrapper(
 		removeCoupon,
 	};
 
+	let cachedManager = createManager( getState(), lastValidResponseCart, actionCreators, subscribe );
+	let lastState = getState();
+
+	function getManager(): ShoppingCartManager {
+		if ( lastState !== getState() ) {
+			cachedManager = createManager( getState(), lastValidResponseCart, actionCreators, subscribe );
+			lastState = getState();
+		}
+		return cachedManager;
+	}
+
 	return {
-		getManager: () => createManager( getState(), lastValidResponseCart, actionCreators, subscribe ),
+		getManager,
 	};
 }
 
@@ -276,5 +287,7 @@ export function createShoppingCartManagerClient( {
 
 	return {
 		forCartKey,
+		subscribeToCartKey: ( cartKey: string, callback ) =>
+			forCartKey( cartKey ).subscribe( callback ),
 	};
 }
