@@ -64,7 +64,6 @@ describe( DataHelper.createSuiteTitle( 'Likes (Post)' ), function () {
 		let publishedPostPage;
 
 		it( 'Set up', async function () {
-			await page.pause();
 			await BrowserManager.clearCookies( page );
 		} );
 
