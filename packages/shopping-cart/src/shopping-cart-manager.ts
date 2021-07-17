@@ -61,11 +61,13 @@ function createManager(
 
 function createManagerWrapper(
 	getState: () => ShoppingCartState,
-	dispatch: ShoppingCartReducerDispatch
+	dispatch: ShoppingCartReducerDispatch,
+	subscribe: ShoppingCartManagerSubscribe
 ): ShoppingCartManagerWrapper {
 	function fetchInitialCart(): void {
-		const { queuedActions, cacheStatus } = getState();
-		if ( queuedActions.length === 0 && cacheStatus === 'fresh' ) {
+		const { cacheStatus } = getState();
+		if ( cacheStatus === 'fresh' ) {
+			debug( 'triggering fetch of initial cart' );
 			dispatch( { type: 'FETCH_INITIAL_RESPONSE_CART' } );
 			dispatch( { type: 'GET_CART_FROM_SERVER' } );
 		}
@@ -74,6 +76,7 @@ function createManagerWrapper(
 	function prepareInvalidCartForSync(): void {
 		const { queuedActions, cacheStatus } = getState();
 		if ( queuedActions.length === 0 && cacheStatus === 'invalid' ) {
+			debug( 'triggering sync of cart to server' );
 			dispatch( { type: 'REQUEST_UPDATED_RESPONSE_CART' } );
 			dispatch( { type: 'SYNC_CART_TO_SERVER' } );
 		}
@@ -92,7 +95,8 @@ function createManagerWrapper(
 	let actionPromises: ( ( cart: ResponseCart ) => void )[] = [];
 	function resolveActionPromisesIfValid(): void {
 		const { queuedActions, cacheStatus, responseCart: tempResponseCart } = getState();
-		if ( queuedActions.length === 0 && cacheStatus === 'valid' ) {
+		if ( queuedActions.length === 0 && cacheStatus === 'valid' && actionPromises.length > 0 ) {
+			debug( `resolving ${ actionPromises.length } action promises` );
 			const responseCart = convertTempResponseCartToResponseCart( tempResponseCart );
 			actionPromises.forEach( ( callback ) => callback( responseCart ) );
 			actionPromises = [];
@@ -106,18 +110,30 @@ function createManagerWrapper(
 		} );
 	}
 
-	let subscribedClients: SubscribeCallback[] = [
-		fetchInitialCart,
-		updateLastValidResponseCart,
-		resolveActionPromisesIfValid,
-		prepareInvalidCartForSync,
-	];
-	function subscribe( callback: SubscribeCallback ): UnsubscribeFunction {
-		subscribedClients.push( callback );
-		return () => {
-			subscribedClients = subscribedClients.filter( ( prevCallback ) => prevCallback !== callback );
-		};
+	function playQueuedActions(): void {
+		const { queuedActions, cacheStatus } = getState();
+		if ( queuedActions.length > 0 && cacheStatus === 'valid' ) {
+			debug( 'cart is loaded; playing queued actions', queuedActions );
+			dispatch( { type: 'CLEAR_QUEUED_ACTIONS' } );
+			queuedActions.forEach( ( action: ShoppingCartAction ) => {
+				dispatch( action );
+			} );
+			debug( 'cart is loaded; queued actions complete' );
+		}
 	}
+
+	debug( 'subscribing essential updaters' );
+	subscribe( () => {
+		debug( 'running essential updaters' );
+		const { cacheStatus } = getState();
+		debug( 'cache status before updaters is', cacheStatus );
+		fetchInitialCart();
+		updateLastValidResponseCart();
+		resolveActionPromisesIfValid();
+		prepareInvalidCartForSync();
+		playQueuedActions();
+		debug( 'running essential updaters complete' );
+	} );
 
 	const removeCoupon: RemoveCouponFromCart = () =>
 		dispatchAndWaitForValid( { type: 'REMOVE_COUPON' } );
@@ -213,14 +229,33 @@ export function createShoppingCartManagerClient( {
 		}
 
 		if ( ! managerWrappersByCartKey[ cartKey ] ) {
+			let subscribedClients: SubscribeCallback[] = [];
+			const subscribe = ( callback: SubscribeCallback ): UnsubscribeFunction => {
+				debug( `adding subscriber for cartKey ${ cartKey }` );
+				subscribedClients.push( callback );
+				return () => {
+					debug( `removing subscriber for cartKey ${ cartKey }` );
+					subscribedClients = subscribedClients.filter(
+						( prevCallback ) => prevCallback !== callback
+					);
+				};
+			};
+			const notifySubscribers = () => {
+				debug( `notifying ${ subscribedClients.length } subscribers for cartKey ${ cartKey }` );
+				subscribedClients.forEach( ( clientCallback ) => clientCallback() );
+			};
+
 			const dispatch = ( action: ShoppingCartAction ) => {
 				setTimeout( () => {
 					statesByCartKey[ cartKey ] = shoppingCartReducer( statesByCartKey[ cartKey ], action );
+					notifySubscribers();
 				} );
 			};
 
 			const dispatchWithMiddleware = ( action: ShoppingCartAction ) => {
+				debug( `heard action request for cartKey ${ cartKey }`, action.type );
 				setTimeout( () => {
+					debug( `dispatching action for cartKey ${ cartKey }`, action.type );
 					middlewaresByCartKey[ cartKey ].forEach( ( middlewareFn ) =>
 						middlewareFn( action, statesByCartKey[ cartKey ], dispatch )
 					);
@@ -231,7 +266,8 @@ export function createShoppingCartManagerClient( {
 			debug( `creating cart manager for "${ cartKey }"` );
 			managerWrappersByCartKey[ cartKey ] = createManagerWrapper(
 				() => statesByCartKey[ cartKey ],
-				dispatchWithMiddleware
+				dispatchWithMiddleware,
+				subscribe
 			);
 		}
 

@@ -24,6 +24,7 @@ const debug = debugFactory( 'shopping-cart:sync' );
 export function createCartSyncMiddleware(
 	setServerCart: ( cart: RequestCart ) => Promise< ResponseCart >
 ): ShoppingCartMiddleware {
+	debug( 'creating cart sync middleware' );
 	return function syncCartToServer(
 		action: ShoppingCartAction,
 		state: ShoppingCartState,
@@ -65,6 +66,7 @@ export function createCartSyncMiddleware(
 export function createCartInitMiddleware(
 	getServerCart: () => Promise< ResponseCart >
 ): ShoppingCartMiddleware {
+	debug( 'creating cart init middleware' );
 	return function initializeCartFromServer(
 		action: ShoppingCartAction,
 		state: ShoppingCartState,
@@ -74,8 +76,8 @@ export function createCartInitMiddleware(
 			return;
 		}
 
-		if ( state.cacheStatus !== 'fresh' ) {
-			debug( 'not initializing cart; cacheStatus is not fresh' );
+		if ( state.cacheStatus !== 'fresh-pending' ) {
+			debug( `not initializing cart; cacheStatus ${ state.cacheStatus } is not fresh` );
 			return;
 		}
 		debug( 'initializing cart' );

@@ -2,6 +2,7 @@
  * External dependencies
  */
 import { useContext, useReducer, useEffect } from 'react';
+import debugFactory from 'debug';
 
 /**
  * Internal dependencies
@@ -11,6 +12,8 @@ import ShoppingCartContext from './shopping-cart-context';
 import ShoppingCartOptionsContext from './shopping-cart-options-context';
 import useRefetchOnFocus from './use-refetch-on-focus';
 
+const debug = debugFactory( 'shopping-cart:use-shopping-cart' );
+
 export default function useShoppingCart( cartKey?: string | undefined ): ShoppingCartManager {
 	const managerClient = useContext( ShoppingCartContext );
 	if ( ! managerClient ) {
@@ -18,6 +21,7 @@ export default function useShoppingCart( cartKey?: string | undefined ): Shoppin
 	}
 
 	const { defaultCartKey } = useContext( ShoppingCartOptionsContext ) ?? {};
+	debug( `getting cart manager for cartKey ${ cartKey ?? defaultCartKey }` );
 	const manager = managerClient.forCartKey( cartKey ?? defaultCartKey );
 
 	// Re-render when the cart changes

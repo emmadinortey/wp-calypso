@@ -4,7 +4,7 @@ import '@automattic/calypso-polyfills';
 /**
  * External dependencies
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import '@testing-library/jest-dom/extend-expect';
 import {
 	screen,
@@ -25,6 +25,7 @@ import type {
 	RequestCart,
 	ResponseCart,
 	MinimalRequestCartProduct,
+	ShoppingCartManagerOptions,
 } from '../src/types';
 
 const planOne: ResponseCartProduct = {
@@ -200,8 +201,14 @@ function ProductList( {
 }
 
 function MockProvider( { children } ) {
+	const options = useMemo< ShoppingCartManagerOptions >(
+		() => ( {
+			defaultCartKey: mainCartKey,
+		} ),
+		[]
+	);
 	return (
-		<ShoppingCartProvider cartKey={ mainCartKey } getCart={ getCart } setCart={ setCart }>
+		<ShoppingCartProvider options={ options } getCart={ getCart } setCart={ setCart }>
 			{ children }
 		</ShoppingCartProvider>
 	);

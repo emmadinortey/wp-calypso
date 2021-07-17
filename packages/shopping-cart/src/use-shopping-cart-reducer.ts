@@ -30,6 +30,8 @@ const debug = debugFactory( 'shopping-cart:use-shopping-cart-reducer' );
 const emptyResponseCart = getEmptyResponseCart();
 
 const alwaysAllowedActions = [
+	'SYNC_CART_TO_SERVER',
+	'GET_CART_FROM_SERVER',
 	'RECEIVE_INITIAL_RESPONSE_CART',
 	'RECEIVE_UPDATED_RESPONSE_CART',
 	'FETCH_INITIAL_RESPONSE_CART',
