@@ -1,7 +1,6 @@
 /**
  * External dependencies
  */
-import { useReducer, useEffect, Dispatch, useCallback, useRef } from 'react';
 import debugFactory from 'debug';
 
 /**
@@ -24,54 +23,11 @@ import type {
 	ShoppingCartAction,
 	CouponStatus,
 	CacheStatus,
-	ShoppingCartMiddleware,
 } from './types';
 import { getEmptyResponseCart } from './empty-carts';
 
 const debug = debugFactory( 'shopping-cart:use-shopping-cart-reducer' );
 const emptyResponseCart = getEmptyResponseCart();
-
-export default function useShoppingCartReducer(
-	middleware: ShoppingCartMiddleware[]
-): [ ShoppingCartState, Dispatch< ShoppingCartAction > ] {
-	const [ hookState, hookDispatch ] = useReducer(
-		shoppingCartReducer,
-		getInitialShoppingCartState()
-	);
-
-	// We need a copy of the state so that dispatchWithMiddleware does not need
-	// hookState as a dependency. Otherwise, dispatchWithMiddleware will change
-	// on every render, which can cause problems for other hooks that depend on
-	// it.
-	const cachedState = useRef< ShoppingCartState >( hookState );
-	cachedState.current = hookState;
-
-	useEffect( () => {
-		if ( hookState.queuedActions.length > 0 && hookState.cacheStatus === 'valid' ) {
-			debug( 'cart is loaded; playing queued actions', hookState.queuedActions );
-			hookDispatch( { type: 'CLEAR_QUEUED_ACTIONS' } );
-			hookState.queuedActions.forEach( ( action: ShoppingCartAction ) => {
-				hookDispatch( action );
-			} );
-			debug( 'cart is loaded; queued actions complete' );
-		}
-	}, [ hookState.queuedActions, hookState.cacheStatus ] );
-
-	const dispatchWithMiddleware = useCallback(
-		( action: ShoppingCartAction ) => {
-			// We want to defer the middleware actions just like the dispatcher is deferred.
-			setTimeout( () => {
-				middleware.forEach( ( middlewareFn ) =>
-					middlewareFn( action, cachedState.current, hookDispatch )
-				);
-			} );
-			hookDispatch( action );
-		},
-		[ middleware ]
-	);
-
-	return [ hookState, dispatchWithMiddleware ];
-}
 
 const alwaysAllowedActions = [
 	'RECEIVE_INITIAL_RESPONSE_CART',
