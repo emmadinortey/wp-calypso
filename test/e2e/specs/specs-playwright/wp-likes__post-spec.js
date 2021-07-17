@@ -67,15 +67,17 @@ describe( DataHelper.createSuiteTitle( 'Likes (Post)' ), function () {
 			await BrowserManager.clearCookies( page );
 		} );
 
-		it( 'Visit site', async function () {
+		it( 'Visit post', async function () {
 			// This is a raw call to the underlying page as it does not warrant creating
 			// an entire flow or page for this one action.
 			await page.goto( publishedURL );
+			publishedPostPage = await PublishedPostPage.Expect( page );
+			const wpAdminBarVisible = await page.isVisible( '#wpadminbar', { state: 'hidden' } );
+			assert.strictEqual( wpAdminBarVisible, false );
 		} );
 
 		it( 'Like post as logged out user and confirm post is liked', async function () {
-			publishedPostPage = await PublishedPostPage.Expect( page );
-			loginFlow = new LoginFlow( page, 'gutenbergSimpleSiteUser' );
+			loginFlow = new LoginFlow( page, 'e2eflowtesting3' );
 
 			// Clicking the Like button will bring up a new popup, so
 			// specifically call the flow for dealing with logging in from a popup.
