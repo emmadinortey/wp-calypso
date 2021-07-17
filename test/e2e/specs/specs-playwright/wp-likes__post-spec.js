@@ -57,23 +57,30 @@ describe( DataHelper.createSuiteTitle( 'Likes (Post)' ), function () {
 		it( 'Unlike post', async function () {
 			await publishedPostPage.unlikePost();
 		} );
+
+		afterAll( async function () {
+			await page.close();
+		} );
 	} );
 
 	describe( 'Like an existing post as logged out user', function () {
 		let loginFlow;
 		let publishedPostPage;
+		let page;
 
-		it( 'Set up', async function () {
-			await BrowserManager.clearCookies( page );
+		setupHooks( ( args ) => {
+			page = args.page;
 		} );
+
+		// it( 'Set up', async function () {
+		// 	await BrowserManager.clearCookies( page );
+		// } );
 
 		it( 'Visit post', async function () {
 			// This is a raw call to the underlying page as it does not warrant creating
 			// an entire flow or page for this one action.
 			await page.goto( publishedURL );
 			publishedPostPage = await PublishedPostPage.Expect( page );
-			const wpAdminBarVisible = await page.isVisible( '#wpadminbar', { state: 'hidden' } );
-			assert.strictEqual( wpAdminBarVisible, false );
 		} );
 
 		it( 'Like post as logged out user and confirm post is liked', async function () {
