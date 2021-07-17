@@ -77,7 +77,7 @@ describe( DataHelper.createSuiteTitle( 'Likes (Post)' ), function () {
 		} );
 
 		it( 'Like post as logged out user and confirm post is liked', async function () {
-			loginFlow = new LoginFlow( page, 'e2eflowtesting3' );
+			loginFlow = new LoginFlow( page, 'defaultUser' );
 
 			// Clicking the Like button will bring up a new popup, so
 			// specifically call the flow for dealing with logging in from a popup.
